@@ -1,0 +1,11 @@
+# Root build context is not used by compose (each service builds its own
+# directory), but keep secrets and bulky artefacts out of any context.
+.env
+.env.*
+.git
+**/node_modules
+**/dist
+**/__pycache__
+**/.pytest_cache
+tests/e2e/test-results
+tests/e2e/playwright-report

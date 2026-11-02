@@ -1,0 +1,199 @@
+# ForgeBoard production deployment.
+#   cp .env.example .env && ./scripts/generate-secrets.sh && docker compose up -d --build
+name: ${COMPOSE_PROJECT_NAME:-forgeboard}
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-backend-env: &backend-env
+  APP_NAME: ${APP_NAME:-ForgeBoard}
+  APP_ENV: ${APP_ENV:-production}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+  ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: ${POSTGRES_DB:-forgeboard}
+  POSTGRES_USER: ${POSTGRES_USER:-forgeboard}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set - run ./scripts/generate-secrets.sh}
+  DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+  DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
+  REDIS_URL: redis://redis:6379/0
+  JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set - run ./scripts/generate-secrets.sh}
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+  REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-14}
+  PASSWORD_RESET_EXPIRE_MINUTES: ${PASSWORD_RESET_EXPIRE_MINUTES:-60}
+  INVITATION_EXPIRE_DAYS: ${INVITATION_EXPIRE_DAYS:-7}
+  COOKIE_SECURE: ${COOKIE_SECURE:-false}
+  LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES:-5}
+  LOGIN_FAILURE_WINDOW_SECONDS: ${LOGIN_FAILURE_WINDOW_SECONDS:-900}
+  LOGIN_LOCKOUT_SECONDS: ${LOGIN_LOCKOUT_SECONDS:-900}
+  IP_AUTH_RATE_PER_MINUTE: ${IP_AUTH_RATE_PER_MINUTE:-30}
+  MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+  ATTACHMENTS_DIR: /data/attachments
+  EMAIL_BACKEND: ${EMAIL_BACKEND:-console}
+  EMAIL_FROM: ${EMAIL_FROM:-ForgeBoard <no-reply@forgeboard.local>}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+  SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+
+services:
+  db:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-forgeboard}
+      POSTGRES_USER: ${POSTGRES_USER:-forgeboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set - run ./scripts/generate-secrets.sh}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command:
+      - postgres
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS:-200}
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-256MB}
+    volumes:
+      # PostgreSQL 18 images keep PGDATA in a version-specific subdirectory of /var/lib/postgresql
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks: [backend]
+    shm_size: 256m
+    stop_grace_period: 30s
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: { memory: 1g }
+    logging: *default-logging
+
+  redis:
+    image: redis:7.4.12-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "volatile-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]
+    # Run directly as the unprivileged redis user (skips the entrypoint's chown/gosu step).
+    user: "999:1000"
+    read_only: true
+    tmpfs: ["/data:uid=999,gid=1000"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: { memory: 192m }
+    logging: *default-logging
+
+  # One-shot migration job. Runs `alembic upgrade head` (idempotent, guarded by a
+  # PostgreSQL advisory lock) before any API container starts.
+  migrate:
+    build:
+      context: ./backend
+      target: runtime
+    image: forgeboard-api:${FORGEBOARD_VERSION:-latest}
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    environment: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [backend]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging: *default-logging
+
+  api:
+    build:
+      context: ./backend
+      target: runtime
+    image: forgeboard-api:${FORGEBOARD_VERSION:-latest}
+    restart: unless-stopped
+    init: true
+    environment:
+      <<: *backend-env
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      GRACEFUL_SHUTDOWN_SECONDS: "20"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - attachments:/data/attachments
+    networks: [backend]
+    expose: ["8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health/ready', timeout=4).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    stop_grace_period: 30s
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: { memory: 768m }
+    logging: *default-logging
+
+  web:
+    build:
+      context: ./frontend
+      target: runtime
+    image: forgeboard-web:${FORGEBOARD_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: api:8000
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-127.0.0.1/32}
+      NGINX_API_RATE: ${NGINX_API_RATE:-50r/s}
+      NGINX_AUTH_RATE: ${NGINX_AUTH_RATE:-10r/s}
+    ports:
+      - "${APP_BIND_ADDRESS:-0.0.0.0}:${APP_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [frontend, backend]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /etc/nginx/conf.d:uid=101,gid=101,mode=0755
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: { memory: 128m }
+    logging: *default-logging
+
+networks:
+  frontend:
+  backend:
+    # db/redis/api live only on this network; only `web` publishes a host port.
+
+volumes:
+  pgdata:
+  attachments:
