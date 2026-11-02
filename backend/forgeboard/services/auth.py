@@ -63,7 +63,7 @@ async def _start_session(session: AsyncSession, user: User, user_agent: str | No
 async def register(
     session: AsyncSession, *, email: str, password: str, display_name: str, user_agent: str | None, ip: str
 ) -> IssuedTokens:
-    await ratelimit.enforce_ip_rate(ip, "register", limit=10)
+    await ratelimit.enforce_ip_rate(ip, "register", limit=get_settings().register_rate_per_minute)
     user = User(email=email.lower(), display_name=display_name, password_hash=hash_password(password))
     session.add(user)
     try:
@@ -199,7 +199,7 @@ async def revoke_all_sessions(
 
 async def request_password_reset(session: AsyncSession, email: str, ip: str) -> None:
     s = get_settings()
-    await ratelimit.enforce_ip_rate(ip, "pwreset", limit=5)
+    await ratelimit.enforce_ip_rate(ip, "pwreset", limit=s.password_reset_rate_per_minute)
     user = await session.scalar(select(User).where(User.email == email.lower(), User.is_active.is_(True)))
     if user is None:
         return  # Do not reveal whether the account exists.

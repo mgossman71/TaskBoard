@@ -63,3 +63,7 @@ ignore = ["S101", "B008", "S105", "S106", "E501", "UP046", "UP047"]
 # Reproducibility / supply-chain hygiene: never resolve packages published in the
 # two weeks before the lock was produced.
 exclude-newer = "2026-10-19T00:00:00Z"
+
+[tool.coverage.run]
+source = ["forgeboard"]
+concurrency = ["greenlet", "thread"]

@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     login_failure_window_seconds: int = 900
     login_lockout_seconds: int = 900
     ip_auth_rate_per_minute: int = 30
+    register_rate_per_minute: int = 10
+    password_reset_rate_per_minute: int = 5
 
     # Attachments
     attachments_dir: str = "/data/attachments"
