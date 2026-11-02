@@ -10,6 +10,7 @@ from forgeboard.models.org import Role
 from forgeboard.models.project import ProjectStatus
 from forgeboard.schemas.auth import UserBrief
 from forgeboard.schemas.common import CleanStr, CleanText, ORMModel
+from forgeboard.schemas.task import TaskCardOut
 
 ProjectKey = Annotated[str, StringConstraints(pattern=r"^[A-Z][A-Z0-9]{1,9}$")]
 Color = Annotated[str, StringConstraints(pattern=r"^#[0-9a-fA-F]{6}$")]
@@ -109,8 +110,3 @@ class BoardOut(BaseModel):
     last_event_id: int
     can_edit: bool
     role: Role
-
-
-from forgeboard.schemas.task import TaskCardOut  # noqa: E402
-
-BoardOut.model_rebuild()

@@ -50,7 +50,8 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = Field(default=14, ge=1, le=90)
     password_reset_expire_minutes: int = Field(default=60, ge=5, le=1440)
     invitation_expire_days: int = Field(default=7, ge=1, le=60)
-    cookie_secure: bool = False
+    # None (unset/empty) = automatic: Secure cookies when PUBLIC_BASE_URL is https.
+    cookie_secure: bool | None = None
     argon2_time_cost: int = 3
     argon2_memory_cost_kib: int = 65536
     argon2_parallelism: int = 2
@@ -81,6 +82,17 @@ class Settings(BaseSettings):
     ws_auth_timeout_seconds: float = 5.0
     ws_replay_limit: int = 500
     presence_ttl_seconds: int = 45
+
+    @field_validator("cookie_secure", mode="before")
+    @classmethod
+    def _empty_is_auto(cls, v):
+        return None if isinstance(v, str) and v.strip() == "" else v
+
+    @property
+    def secure_cookies(self) -> bool:
+        if self.cookie_secure is None:
+            return self.public_base_url.lower().startswith("https://")
+        return self.cookie_secure
 
     @field_validator("log_level")
     @classmethod

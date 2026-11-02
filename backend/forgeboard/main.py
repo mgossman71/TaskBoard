@@ -23,6 +23,84 @@ from forgeboard.realtime.hub import hub
 
 log = get_logger("forgeboard")
 
+JSON_BODY_LIMIT = 1024 * 1024  # non-multipart requests (JSON) are small by design
+
+
+class BodySizeLimitMiddleware:
+    """Defense in depth (nginx also limits bodies): reject oversized request bodies even
+    if the API is reached directly. Checks Content-Length up front and counts streamed
+    (chunked) bytes; once over the limit the app sees a disconnect and the client gets 413."""
+
+    def __init__(self, app):
+        self.app = app
+
+    @staticmethod
+    def _limit(scope) -> int:
+        headers = dict(scope.get("headers") or [])
+        ctype = headers.get(b"content-type", b"").decode("latin-1").lower()
+        if ctype.startswith("multipart/form-data"):
+            return get_settings().max_upload_bytes + 1024 * 1024
+        return JSON_BODY_LIMIT
+
+    async def _reject(self, send) -> None:
+        body = b'{"error":{"code":"payload_too_large","message":"Request body too large"}}'
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 413,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"content-length", str(len(body)).encode()),
+                    (b"connection", b"close"),
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        limit = self._limit(scope)
+        headers = dict(scope.get("headers") or [])
+        declared = headers.get(b"content-length")
+        if declared is not None:
+            try:
+                if int(declared) > limit:
+                    return await self._reject(send)
+            except ValueError:
+                return await self._reject(send)
+        state = {"received": 0, "exceeded": False, "started": False}
+
+        async def limited_receive():
+            if state["exceeded"]:
+                return {"type": "http.disconnect"}
+            message = await receive()
+            if message["type"] == "http.request":
+                state["received"] += len(message.get("body", b""))
+                if state["received"] > limit:
+                    state["exceeded"] = True
+                    return {"type": "http.disconnect"}
+            return message
+
+        async def guarded_send(message):
+            if state["exceeded"]:
+                if message["type"] == "http.response.start" and not state["started"]:
+                    state["started"] = True
+                    await self._reject(send)
+                return  # swallow whatever the app tried to send
+            if message["type"] == "http.response.start":
+                state["started"] = True
+            await send(message)
+
+        try:
+            await self.app(scope, limited_receive, guarded_send)
+        except Exception:
+            if state["exceeded"]:
+                if not state["started"]:
+                    await self._reject(send)
+                return
+            raise
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +108,11 @@ async def lifespan(app: FastAPI):
     configure_logging(s.log_level, json=s.app_env != "development")
     get_engine()
     hub.start()
+    if s.app_env == "production" and s.public_base_url.lower().startswith("https://") and not s.secure_cookies:
+        log.warning(
+            "cookie_secure_disabled",
+            message="PUBLIC_BASE_URL is https but COOKIE_SECURE=false: session cookies may be sent over plain HTTP.",
+        )
     if s.app_env == "production" and s.email_backend == "console":
         log.warning(
             "email_backend_console",
@@ -37,10 +120,14 @@ async def lifespan(app: FastAPI):
             "Configure SMTP_* for real delivery.",
         )
     try:
+        from sqlalchemy import text
+
         from forgeboard.services.attachments import sweep_orphans
 
-        async with get_sessionmaker()() as session:
-            removed = await sweep_orphans(session)
+        async with get_sessionmaker()() as session, session.begin():
+            # Every uvicorn worker runs this lifespan; only the lock holder sweeps.
+            got = await session.scalar(text("SELECT pg_try_advisory_xact_lock(0x46425357)"))  # "FBSW"
+            removed = await sweep_orphans(session) if got else 0
         if removed:
             log.info("attachment_orphans_removed", count=removed)
     except Exception:
@@ -128,6 +215,7 @@ def create_app() -> FastAPI:
             )
         return response
 
+    app.add_middleware(BodySizeLimitMiddleware)  # outermost: enforced before any parsing
     app.include_router(health.router)
     for r in (auth.router, orgs.router, projects.router, tasks.router):
         app.include_router(r, prefix="/api/v1")

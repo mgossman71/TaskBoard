@@ -183,7 +183,8 @@ All checks live in `forgeboard/authz.py`; services call a loader before touching
   - *Remove member*: project memberships and task assignments in that org are removed atomically.
   - *Delete organization* (owner only): cascades everything.
   - An orphan sweeper (startup + `cli cleanup-orphans`) removes attachment files without rows
-    older than one hour (crash between commit and unlink).
+    older than one hour (crash between commit and unlink). It checks candidates against the
+    database in batches of 500 (bounded memory) and runs in one worker only (advisory try-lock).
 
 ## 7. Task dependency engine
 
@@ -250,7 +251,9 @@ authorized API with `Content-Disposition: attachment`, `X-Content-Type-Options: 
 | Secrets | env vars only; production refuses placeholder/short secrets; `generate-secrets.sh` |
 | Container hardening | non-root (uid 10001 / nginx 101 / redis 999), read-only root FS + tmpfs, `cap_drop: ALL`, `no-new-privileges`, DB/Redis/API not published |
 | Clickjacking / sniffing | `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, Referrer-Policy |
-| Client IP spoofing | nginx overwrites `X-Forwarded-For` with `$remote_addr`; only `TRUSTED_PROXY_CIDRS` are honoured by the realip module |
+| Client IP spoofing | nginx overwrites `X-Forwarded-For` with `$remote_addr`; only `TRUSTED_PROXY_CIDRS` are honoured by the realip module; the API trusts forwarded headers only from the pinned `BACKEND_SUBNET` (default elsewhere: nobody), verified by a forged-header lockout check |
+| Oversized requests | nginx `client_max_body_size` plus an ASGI middleware in the API (JSON ≤ 1 MB, multipart ≤ upload limit + 1 MB, chunked bodies counted) → 413 even without nginx |
+| Transport | Session cookies are `Secure` automatically for an `https://` `PUBLIC_BASE_URL`; opt-in HSTS (`HSTS_ENABLED`) for HTTPS deployments |
 
 ## 11. Performance design
 

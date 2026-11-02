@@ -36,7 +36,7 @@ def _set_cookies(response: Response, tokens: IssuedTokens) -> None:
         expires=tokens.refresh_expires_at,
         path=REFRESH_PATH,
         httponly=True,
-        secure=s.cookie_secure,
+        secure=s.secure_cookies,
         samesite="strict",
     )
     response.set_cookie(
@@ -45,15 +45,15 @@ def _set_cookies(response: Response, tokens: IssuedTokens) -> None:
         expires=tokens.refresh_expires_at,
         path="/",
         httponly=False,
-        secure=s.cookie_secure,
+        secure=s.secure_cookies,
         samesite="strict",
     )
 
 
 def _clear_cookies(response: Response) -> None:
     s = get_settings()
-    response.delete_cookie(REFRESH_COOKIE, path=REFRESH_PATH, secure=s.cookie_secure, httponly=True, samesite="strict")
-    response.delete_cookie(CSRF_COOKIE, path="/", secure=s.cookie_secure, samesite="strict")
+    response.delete_cookie(REFRESH_COOKIE, path=REFRESH_PATH, secure=s.secure_cookies, httponly=True, samesite="strict")
+    response.delete_cookie(CSRF_COOKIE, path="/", secure=s.secure_cookies, samesite="strict")
 
 
 def _token_response(tokens: IssuedTokens) -> TokenResponse:
@@ -150,6 +150,8 @@ async def me(auth: Auth) -> UserOut:
 
 @router.patch("/me", response_model=UserOut)
 async def update_me(body: UpdateProfileRequest, auth: Auth, session: Session) -> UserOut:
+    # Deliberately not written to the activity log: activity is organization-scoped and a
+    # profile belongs to no single organization (and is not a work item).
     user = await session.merge(auth.user)
     user.display_name = body.display_name
     await session.commit()

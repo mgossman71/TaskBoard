@@ -1,10 +1,10 @@
 """Operational CLI.
 
-    python -m forgeboard.cli seed-load --users 100 --tasks 10000 --out /tmp/seed.json
-        Bulk-creates a *load-test* organization (explicit command only; never run
-        automatically) and writes credentials/ids for the k6 scenario.
-    python -m forgeboard.cli cleanup-orphans
-        Removes attachment files that have no database row.
+python -m forgeboard.cli seed-load --users 100 --tasks 10000 --out /tmp/seed.json
+    Bulk-creates a *load-test* organization (explicit command only; never run
+    automatically) and writes credentials/ids for the k6 scenario.
+python -m forgeboard.cli cleanup-orphans
+    Removes attachment files that have no database row.
 """
 
 from __future__ import annotations
@@ -19,7 +19,18 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import insert
 
 from forgeboard.db import get_sessionmaker
-from forgeboard.models import BoardColumn, Membership, Organization, Project, ProjectMember, Role, Task, TaskDependency, User, task_assignees
+from forgeboard.models import (
+    BoardColumn,
+    Membership,
+    Organization,
+    Project,
+    ProjectMember,
+    Role,
+    Task,
+    TaskDependency,
+    User,
+    task_assignees,
+)
 from forgeboard.security.passwords import hash_password
 
 DEFAULT_COLUMNS = [("To Do", False), ("In Progress", False), ("In Review", False), ("Done", True)]
@@ -27,7 +38,7 @@ WORDS = "api auth billing cache dashboard deploy docs export import invoice logi
 
 
 async def seed_load(users: int, tasks: int, projects: int, password: str, out: str) -> None:
-    rng = random.Random(1234)
+    rng = random.Random(1234)  # noqa: S311 - deterministic synthetic test data, not security-relevant
     pw_hash = hash_password(password)  # one hash for all synthetic users (speed)
     tag = uuid.uuid4().hex[:6]
     now = datetime.now(UTC)
@@ -36,13 +47,21 @@ async def seed_load(users: int, tasks: int, projects: int, password: str, out: s
         s.add(org)
         await s.flush()
         user_rows = [
-            {"id": uuid.uuid4(), "email": f"load{i}-{tag}@example.com", "display_name": f"Load User {i}", "password_hash": pw_hash}
+            {
+                "id": uuid.uuid4(),
+                "email": f"load{i}-{tag}@example.com",
+                "display_name": f"Load User {i}",
+                "password_hash": pw_hash,
+            }
             for i in range(users)
         ]
         await s.execute(insert(User), user_rows)
         await s.execute(
             insert(Membership),
-            [{"org_id": org.id, "user_id": u["id"], "role": Role.OWNER if i == 0 else Role.MEMBER} for i, u in enumerate(user_rows)],
+            [
+                {"org_id": org.id, "user_id": u["id"], "role": Role.OWNER if i == 0 else Role.MEMBER}
+                for i, u in enumerate(user_rows)
+            ],
         )
         proj_ids, done_cols, open_cols = [], {}, {}
         per_project = tasks // projects
@@ -50,13 +69,17 @@ async def seed_load(users: int, tasks: int, projects: int, password: str, out: s
             pid = uuid.uuid4()
             proj_ids.append(pid)
             await s.execute(
-                insert(Project), [{"id": pid, "org_id": org.id, "name": f"Load Project {p}", "key": f"LP{p}", "task_seq": per_project}]
+                insert(Project),
+                [{"id": pid, "org_id": org.id, "name": f"Load Project {p}", "key": f"LP{p}", "task_seq": per_project}],
             )
             cols = []
             for i, (name, done) in enumerate(DEFAULT_COLUMNS):
                 cid = uuid.uuid4()
                 cols.append((cid, done))
-                await s.execute(insert(BoardColumn), [{"id": cid, "project_id": pid, "name": name, "position": (i + 1) * 1024.0, "is_done": done}])
+                await s.execute(
+                    insert(BoardColumn),
+                    [{"id": cid, "project_id": pid, "name": name, "position": (i + 1) * 1024.0, "is_done": done}],
+                )
             done_cols[pid] = [c for c, d in cols if d]
             open_cols[pid] = [c for c, d in cols if not d]
             await s.execute(insert(ProjectMember), [{"project_id": pid, "user_id": u["id"]} for u in user_rows])
@@ -75,7 +98,9 @@ async def seed_load(users: int, tasks: int, projects: int, password: str, out: s
                         "title": f"{rng.choice(WORDS).title()} {rng.choice(WORDS)} task {n + 1}",
                         "description": " ".join(rng.choices(WORDS, k=12)),
                         "priority": rng.choice(["none", "low", "medium", "high", "urgent"]),
-                        "due_date": (date.today() + timedelta(days=rng.randint(-20, 40))) if rng.random() < 0.6 else None,
+                        "due_date": (date.today() + timedelta(days=rng.randint(-20, 40)))
+                        if rng.random() < 0.6
+                        else None,
                         "position": float(n + 1) * 1024.0,
                         "created_at": created,
                         "updated_at": created,
@@ -84,7 +109,13 @@ async def seed_load(users: int, tasks: int, projects: int, password: str, out: s
                 )
                 assign_rows.append({"task_id": tid, "user_id": rng.choice(user_rows)["id"]})
                 if n > 0 and rng.random() < 0.4:
-                    dep_rows.append({"task_id": tid, "depends_on_id": task_rows[rng.randrange(max(0, n - 50), n)]["id"], "project_id": pid})
+                    dep_rows.append(
+                        {
+                            "task_id": tid,
+                            "depends_on_id": task_rows[rng.randrange(max(0, n - 50), n)]["id"],
+                            "project_id": pid,
+                        }
+                    )
             for i in range(0, len(task_rows), 1000):
                 await s.execute(insert(Task), task_rows[i : i + 1000])
             for i in range(0, len(assign_rows), 2000):
@@ -100,7 +131,7 @@ async def seed_load(users: int, tasks: int, projects: int, password: str, out: s
         "emails": [u["email"] for u in user_rows],
         "tasks": tasks,
     }
-    with open(out, "w") as fh:
+    with open(out, "w") as fh:  # noqa: ASYNC230 - one small write at the end of a CLI run
         json.dump(data, fh)
     print(f"seeded org {org.id}: {users} users, {projects} projects, {per_project * projects} tasks -> {out}")
 
@@ -120,7 +151,7 @@ def main() -> None:
     sl.add_argument("--tasks", type=int, default=10_000)
     sl.add_argument("--projects", type=int, default=5)
     sl.add_argument("--password", default="Load-Test-Passw0rd!")
-    sl.add_argument("--out", default="/tmp/seed.json")
+    sl.add_argument("--out", default="/tmp/seed.json")  # noqa: S108 - inside the container, read back by the script
     sub.add_parser("cleanup-orphans", help="delete attachment files without DB rows")
     args = parser.parse_args()
     if args.cmd == "seed-load":

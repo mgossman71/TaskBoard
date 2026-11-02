@@ -33,41 +33,52 @@ MAX_SUBSCRIPTIONS = 50
 MAX_MESSAGE_BYTES = 8192
 
 
-async def _authorize_project(c: Connection, project_id: str) -> bool:
+async def _can_see_project(session, c: Connection, project_id: str) -> bool:
     try:
         pid = uuid.UUID(project_id)
     except ValueError:
         return False
-    async with get_sessionmaker()() as session:
-        try:
-            await load_project(session, c.user_id, pid)
-            return True
-        except AppError:
-            return False
+    try:
+        await load_project(session, c.user_id, pid)
+        return True
+    except AppError:
+        return False
 
 
-async def _authorize_org(c: Connection, org_id: str) -> bool:
+async def _can_see_org(session, c: Connection, org_id: str) -> bool:
     try:
         oid = uuid.UUID(org_id)
     except ValueError:
         return False
+    try:
+        await require_org_role(session, oid, c.user_id)
+        return True
+    except AppError:
+        return False
+
+
+async def _authorize_project(c: Connection, project_id: str) -> bool:
     async with get_sessionmaker()() as session:
-        try:
-            await require_org_role(session, oid, c.user_id)
-            return True
-        except AppError:
-            return False
+        return await _can_see_project(session, c, project_id)
+
+
+async def _authorize_org(c: Connection, org_id: str) -> bool:
+    async with get_sessionmaker()() as session:
+        return await _can_see_org(session, c, org_id)
 
 
 async def _revalidate(c: Connection) -> None:
-    for pid in list(c.projects):
-        if not await _authorize_project(c, pid):
-            hub.unsubscribe(c, pid)
-            c.send({"kind": "unsubscribed", "project_id": pid, "reason": "access_revoked"})
-    for oid in list(c.orgs):
-        if not await _authorize_org(c, oid):
-            hub.unsubscribe_org(c, oid)
-            c.send({"kind": "unsubscribed", "org_id": oid, "reason": "access_revoked"})
+    """Re-check every live subscription of a connection (on access changes) using a single
+    database session for all of them."""
+    async with get_sessionmaker()() as session:
+        for pid in list(c.projects):
+            if not await _can_see_project(session, c, pid):
+                hub.unsubscribe(c, pid)
+                c.send({"kind": "unsubscribed", "project_id": pid, "reason": "access_revoked"})
+        for oid in list(c.orgs):
+            if not await _can_see_org(session, c, oid):
+                hub.unsubscribe_org(c, oid)
+                c.send({"kind": "unsubscribed", "org_id": oid, "reason": "access_revoked"})
 
 
 hub.revalidate = _revalidate

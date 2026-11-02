@@ -25,7 +25,9 @@ def main() -> None:
         port=int(os.environ.get("PORT", "8000")),
         workers=int(os.environ.get("WEB_CONCURRENCY", "2")),
         proxy_headers=True,
-        forwarded_allow_ips=os.environ.get("FORWARDED_ALLOW_IPS", "*"),
+        # Only proxies in this list may set the client address via X-Forwarded-For. Compose
+        # sets it to the pinned backend subnet (where nginx lives); default trusts nobody.
+        forwarded_allow_ips=os.environ.get("FORWARDED_ALLOW_IPS", "127.0.0.1"),
         timeout_graceful_shutdown=int(os.environ.get("GRACEFUL_SHUTDOWN_SECONDS", "20")),
         timeout_keep_alive=int(os.environ.get("KEEPALIVE_SECONDS", "15")),
         log_config=None,

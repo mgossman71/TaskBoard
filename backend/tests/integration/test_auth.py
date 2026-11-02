@@ -213,3 +213,15 @@ async def test_change_password_revokes_other_sessions(client, api):
     assert ok.status_code == 204
     assert (await client.get("/api/v1/auth/me", headers=u.h)).status_code == 200
     assert (await client.get("/api/v1/auth/me", headers=other)).status_code == 401
+
+
+async def test_refresh_cookie_secure_behind_https(client, settings, monkeypatch):
+    monkeypatch.setattr(settings, "public_base_url", "https://board.example.com")
+    monkeypatch.setattr(settings, "cookie_secure", None)
+    r = await client.post(
+        "/api/v1/auth/register", json={"email": "tls@example.com", "password": PASSWORD, "display_name": "TLS"}
+    )
+    client.cookies.clear()
+    assert r.status_code == 201
+    cookies = r.headers.get_list("set-cookie")
+    assert all("Secure" in c for c in cookies if c.startswith(("fb_refresh=", "fb_csrf=")))

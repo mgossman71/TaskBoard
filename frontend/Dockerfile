@@ -32,7 +32,8 @@ ENV API_UPSTREAM=api:8000 \
     MAX_UPLOAD_MB=10 \
     TRUSTED_PROXY_CIDRS=127.0.0.1/32 \
     NGINX_API_RATE=50r/s \
-    NGINX_AUTH_RATE=10r/s
+    NGINX_AUTH_RATE=10r/s \
+    HSTS_ENABLED=false
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=5 \
   CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1

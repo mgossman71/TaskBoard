@@ -53,6 +53,11 @@ Honest list of what is incomplete, unverified, or a deliberate trade-off.
 15. Copying a session's cookies to another browser and using both will trigger refresh-token
     reuse detection and sign both out (intended theft protection).
 
+16a. The internal network uses a pinned subnet (`BACKEND_SUBNET`, default `172.30.250.0/24`) so
+    the API can restrict which peers may set `X-Forwarded-For`. It can collide with an existing
+    network, and two installations on one host need different values (the test scripts use
+    `172.30.251–253.0/24`).
+
 ## Minor
 
 16. Overdue highlighting on cards uses the browser's local date; server-side overdue counts and

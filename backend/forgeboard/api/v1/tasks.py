@@ -8,7 +8,6 @@ from fastapi import APIRouter, File, Query, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
 from forgeboard.deps import Auth, Session
-from forgeboard.schemas.auth import UserBrief
 from forgeboard.schemas.task import (
     ActivityOut,
     AttachmentOut,
@@ -24,7 +23,7 @@ from forgeboard.schemas.task import (
 from forgeboard.services import attachments as att_svc
 from forgeboard.services import dependencies as dep_svc
 from forgeboard.services import tasks as svc
-from forgeboard.services.serializers import user_brief
+from forgeboard.services.serializers import activity_out, user_brief
 
 router = APIRouter(tags=["tasks"])
 
@@ -58,19 +57,7 @@ async def task_history(
     before: int | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 100,
 ) -> list[ActivityOut]:
-    rows = await svc.list_activity(session, auth.user, task_id=task_id, before=before, limit=limit)
-    return [
-        ActivityOut(
-            id=e.id,
-            type=e.type,
-            project_id=e.project_id,
-            task_id=e.task_id,
-            actor=UserBrief.model_validate(a) if a else None,
-            payload=e.payload,
-            created_at=e.created_at,
-        )
-        for e, a in rows
-    ]
+    return activity_out(await svc.list_activity(session, auth.user, task_id=task_id, before=before, limit=limit))
 
 
 # -------------------------------------------------------------- comments

@@ -11,7 +11,23 @@ from sqlalchemy.orm import selectinload
 
 from forgeboard.models import BoardColumn, Task, TaskDependency, User
 from forgeboard.schemas.auth import UserBrief
-from forgeboard.schemas.task import TaskCardOut, TaskOut
+from forgeboard.schemas.task import ActivityOut, TaskCardOut, TaskOut
+
+
+def activity_out(rows) -> list[ActivityOut]:
+    """(ActivityEvent, actor) rows -> API schema; shared by project, org and task endpoints."""
+    return [
+        ActivityOut(
+            id=e.id,
+            type=e.type,
+            project_id=e.project_id,
+            task_id=e.task_id,
+            actor=UserBrief.model_validate(a) if a else None,
+            payload=e.payload,
+            created_at=e.created_at,
+        )
+        for e, a in rows
+    ]
 
 
 def user_brief(u: User | None) -> dict[str, Any] | None:

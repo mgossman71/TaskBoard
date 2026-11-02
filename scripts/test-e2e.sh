@@ -6,6 +6,7 @@ cd "$(dirname "$0")/.."
 export COMPOSE_PROJECT_NAME=forgeboard-e2e
 export APP_PORT="${E2E_APP_PORT:-18080}"
 export APP_BIND_ADDRESS=127.0.0.1
+export BACKEND_SUBNET=172.30.251.0/24   # distinct from the main stack so both can run
 export POSTGRES_PASSWORD="e2e-$(date +%s)-db-password"
 export JWT_SECRET="e2e-jwt-secret-$(date +%s)-0123456789abcdef0123456789"
 export PUBLIC_BASE_URL=http://web:8080

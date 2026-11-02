@@ -54,3 +54,30 @@ def test_argon2id_hash_and_verify():
 )
 def test_sanitize_filename(raw, expected):
     assert sanitize_filename(raw) == expected
+
+
+@pytest.mark.parametrize(
+    ("base_url", "explicit", "expected"),
+    [
+        ("http://localhost:8080", None, False),
+        ("https://board.example.com", None, True),
+        ("https://board.example.com", "", True),  # empty env value = automatic
+        ("https://board.example.com", False, False),
+        ("http://10.0.0.5:8080", True, True),
+    ],
+)
+def test_cookie_secure_derived_from_public_url(base_url, explicit, expected):
+    kwargs = {"app_env": "test", "jwt_secret": "x" * 40, "public_base_url": base_url}
+    if explicit is not None:
+        kwargs["cookie_secure"] = explicit
+    assert Settings(**kwargs).secure_cookies is expected
+
+
+def test_server_trusts_no_forwarded_headers_by_default(monkeypatch):
+    import forgeboard.serve as serve
+
+    captured = {}
+    monkeypatch.delenv("FORWARDED_ALLOW_IPS", raising=False)
+    monkeypatch.setattr(serve.uvicorn, "run", lambda *a, **kw: captured.update(kw))
+    serve.main()
+    assert captured["forwarded_allow_ips"] == "127.0.0.1" and captured["proxy_headers"] is True

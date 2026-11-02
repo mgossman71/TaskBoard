@@ -10,6 +10,7 @@ cd "$(dirname "$0")/.."
 export COMPOSE_PROJECT_NAME=forgeboard-deploycheck
 export APP_PORT="${CHECK_APP_PORT:-18090}"
 export APP_BIND_ADDRESS=127.0.0.1
+export BACKEND_SUBNET=172.30.252.0/24   # distinct from the main stack so both can run
 BASE="http://127.0.0.1:${APP_PORT}"
 export PUBLIC_BASE_URL="$BASE"
 export POSTGRES_PASSWORD="dc-$(openssl rand -hex 16 2>/dev/null || date +%s%N)"
@@ -72,6 +73,38 @@ check "created org/project/tasks/dependency/comment/attachment" test -n "$ATT"
 echo "== 4. WebSocket through nginx"
 WS=$(python3 tests/deploy/ws_check.py "$BASE" "$TOKEN" "$PROJ" 2>&1 || docker run --rm --network host -v "$PWD/tests/deploy:/t" python:3.13-slim python /t/ws_check.py "$BASE" "$TOKEN" "$PROJ" 2>&1 || true)
 check "WebSocket auth + subscribe via nginx" grep -q WS_OK <<<"$WS"
+
+echo "== 4b. Hardening"
+check "no .env file tracked by git (only .env.example)" sh -c "! git ls-files | grep -E '(^|/)\.env' | grep -vx '.env.example'"
+TRUSTED=$("${COMPOSE[@]}" exec -T api printenv FORWARDED_ALLOW_IPS | tr -d '\r')
+NETSUB=$(docker network inspect "${COMPOSE_PROJECT_NAME}_backend" --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}')
+check "API trusts X-Forwarded-For only from the pinned backend subnet ($TRUSTED)" test "$TRUSTED" = "$NETSUB" -a "$TRUSTED" = "$BACKEND_SUBNET"
+check "no HSTS header by default (plain HTTP)" sh -c "! curl -fsSI '$BASE/' | grep -qi strict-transport-security"
+# Forged X-Forwarded-For from an untrusted peer (127.0.0.1 inside the api container) must not
+# give each attempt a fresh client IP: the 6th wrong password is locked out (429).
+SPOOF=$("${COMPOSE[@]}" exec -T api python - <<'PY'
+import json, urllib.request, urllib.error
+codes = []
+for i in range(6):
+    req = urllib.request.Request("http://127.0.0.1:8000/api/v1/auth/login", method="POST",
+        data=json.dumps({"email": "spoof-target@example.com", "password": "Wrong-Passw0rd!"}).encode(),
+        headers={"content-type": "application/json", "x-forwarded-for": f"203.0.113.{i + 1}"})
+    try:
+        codes.append(urllib.request.urlopen(req, timeout=10).status)
+    except urllib.error.HTTPError as e:
+        codes.append(e.code)
+print(",".join(map(str, codes)))
+PY
+)
+check "forged X-Forwarded-For is ignored from untrusted peers (codes: $SPOOF)" test "$SPOOF" = "401,401,401,401,401,429"
+# Through nginx: a client-supplied X-Forwarded-For is overwritten, so it cannot dodge lockout either.
+NG=""
+for i in 1 2 3 4 5 6; do
+  NG="$NG$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/v1/auth/login" -H 'content-type: application/json' -H "X-Forwarded-For: 198.51.100.$i" -d '{"email":"spoof-nginx@example.com","password":"Wrong-Passw0rd!"}'),"
+done
+check "forged X-Forwarded-For via nginx cannot evade lockout (codes: ${NG%,})" test "${NG%,}" = "401,401,401,401,401,429"
+BIG=$(head -c 1200000 /dev/zero | tr '\0' 'x' | curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/v1/auth/login" -H 'content-type: application/json' --data-binary @-)
+check "oversized JSON body rejected (HTTP $BIG)" test "$BIG" = "413"
 
 echo "== 5. Recreate containers (down + up --build) and verify persistence"
 check "docker compose down" "${COMPOSE[@]}" down

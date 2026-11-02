@@ -52,8 +52,8 @@ Point your proxy (Caddy, Traefik, nginx, a load balancer) at `APP_PORT`, forward
 upgrades for `/api/v1/ws`, and set in `.env`:
 
 ```env
-PUBLIC_BASE_URL=https://board.example.com
-COOKIE_SECURE=true
+PUBLIC_BASE_URL=https://board.example.com   # cookies become Secure automatically for https
+HSTS_ENABLED=true                           # send Strict-Transport-Security
 TRUSTED_PROXY_CIDRS=10.0.0.5/32        # address(es) of your proxy, so client IPs are preserved
 APP_BIND_ADDRESS=127.0.0.1             # if the proxy runs on the same host
 ```
@@ -101,7 +101,9 @@ Every variable is listed (with comments) in [`.env.example`](.env.example).
 | `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Access token lifetime |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `14` | Session (refresh family) lifetime |
 | `PASSWORD_RESET_EXPIRE_MINUTES` / `INVITATION_EXPIRE_DAYS` | `60` / `7` | Token lifetimes |
-| `COOKIE_SECURE` | `false` | Set `true` when served over HTTPS |
+| `COOKIE_SECURE` | *(empty = automatic)* | Secure cookies; automatic = `true` when `PUBLIC_BASE_URL` is `https://` |
+| `HSTS_ENABLED` | `false` | Send `Strict-Transport-Security` (only when served over HTTPS) |
+| `BACKEND_SUBNET` | `172.30.250.0/24` | Pinned subnet of the internal network; the API trusts `X-Forwarded-For` only from it. Change on collision; use a distinct subnet per installation on one host |
 | `LOGIN_MAX_FAILURES` / `LOGIN_FAILURE_WINDOW_SECONDS` / `LOGIN_LOCKOUT_SECONDS` | `5` / `900` / `900` | Brute-force lockout |
 | `IP_AUTH_RATE_PER_MINUTE` / `REGISTER_RATE_PER_MINUTE` / `PASSWORD_RESET_RATE_PER_MINUTE` | `30` / `10` / `5` | Per-IP API rate limits |
 | `NGINX_API_RATE` / `NGINX_AUTH_RATE` | `50r/s` / `10r/s` | nginx per-IP request rates |
@@ -148,5 +150,7 @@ Results of the last full run are recorded in [TEST_RESULTS.md](TEST_RESULTS.md).
 | `Bind for 0.0.0.0:8080 failed: port is already allocated` | Set `APP_PORT` in `.env` to a free port (and `PUBLIC_BASE_URL` accordingly) |
 | `service "migrate" didn't complete successfully` | `docker compose logs migrate` — usually placeholder secrets or DB credentials changed after first init |
 | `password authentication failed` / changed `POSTGRES_PASSWORD` after first start (e.g. re-ran `cp .env.example .env`) | PostgreSQL keeps the original password in the volume; run `./scripts/sync-db-password.sh` (sets the DB password to the one in `.env`, keeps data) |
-| Can't log in through an HTTPS proxy | Set `COOKIE_SECURE=true` and `PUBLIC_BASE_URL=https://…` |
+| Can't log in through an HTTPS proxy | Set `PUBLIC_BASE_URL=https://…` (cookies then become Secure automatically) |
+| `Pool overlaps with other one on this address space` / `invalid pool request` | `BACKEND_SUBNET` collides with an existing Docker or host network; pick another private /24 in `.env` |
+| `network forgeboard_backend … needs to be recreated` after upgrading | `docker compose down` (keeps data) then `docker compose up -d --build` |
 | WebSocket status shows "Reconnecting…" behind a proxy | Ensure the proxy forwards `Upgrade`/`Connection` headers for `/api/v1/ws` and the origin matches `PUBLIC_BASE_URL` |

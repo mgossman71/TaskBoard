@@ -32,7 +32,7 @@ from forgeboard.services import dashboard as dashboard_svc
 from forgeboard.services import dependencies as dep_svc
 from forgeboard.services import projects as svc
 from forgeboard.services import tasks as task_svc
-from forgeboard.services.serializers import task_query, tasks_out
+from forgeboard.services.serializers import activity_out, task_query, tasks_out
 
 router = APIRouter(tags=["projects"])
 
@@ -306,21 +306,6 @@ async def create_task(project_id: uuid.UUID, body: TaskCreate, auth: Auth, sessi
 # -------------------------------------------------------------- activity / graph / dashboard
 
 
-def _activity_out(rows) -> list[ActivityOut]:
-    return [
-        ActivityOut(
-            id=e.id,
-            type=e.type,
-            project_id=e.project_id,
-            task_id=e.task_id,
-            actor=UserBrief.model_validate(a) if a else None,
-            payload=e.payload,
-            created_at=e.created_at,
-        )
-        for e, a in rows
-    ]
-
-
 @router.get("/projects/{project_id}/activity", response_model=list[ActivityOut])
 async def project_activity(
     project_id: uuid.UUID,
@@ -330,7 +315,7 @@ async def project_activity(
     after: int | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[ActivityOut]:
-    return _activity_out(
+    return activity_out(
         await task_svc.list_activity(session, auth.user, project_id=project_id, before=before, after=after, limit=limit)
     )
 
@@ -343,7 +328,7 @@ async def org_activity(
     before: int | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[ActivityOut]:
-    return _activity_out(await task_svc.list_activity(session, auth.user, org_id=org_id, before=before, limit=limit))
+    return activity_out(await task_svc.list_activity(session, auth.user, org_id=org_id, before=before, limit=limit))
 
 
 @router.get("/projects/{project_id}/dependency-graph", response_model=DependencyGraphOut)

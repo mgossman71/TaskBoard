@@ -217,27 +217,52 @@ def delete_files_later(session: AsyncSession, keys: list[str]) -> None:
     activity.after_commit(session, _rm)
 
 
-async def sweep_orphans(session: AsyncSession) -> int:
-    """Remove files with no DB row (e.g. crash between commit and unlink). Runs at startup."""
+SWEEP_BATCH = 500
+SWEEP_GRACE_SECONDS = 3600
+
+
+async def sweep_orphans(session: AsyncSession, *, grace_seconds: int = SWEEP_GRACE_SECONDS) -> int:
+    """Remove files with no DB row (e.g. a crash between commit and unlink).
+
+    Memory stays bounded: candidates are checked against the database in batches of
+    SWEEP_BATCH keys instead of loading every storage key. Files younger than the grace
+    period are skipped (an upload may have written its file but not committed its row)."""
     root = storage_root()
     if not root.exists():
         return 0
-    known = set((await session.scalars(select(Attachment.storage_key))).all())
     removed = 0
+    batch: list[Path] = []
+
+    async def flush() -> None:
+        nonlocal removed
+        keys = [p.name for p in batch if not p.name.endswith(".part")]
+        known = (
+            set((await session.scalars(select(Attachment.storage_key).where(Attachment.storage_key.in_(keys)))).all())
+            if keys
+            else set()
+        )
+        for p in batch:
+            if p.name.endswith(".part") or p.name not in known:
+                try:
+                    p.unlink()
+                    removed += 1
+                except OSError:
+                    pass
+        batch.clear()
+
+    now = time.time()
     for shard in root.iterdir():
         if not shard.is_dir():
             continue
         for f in shard.iterdir():
-            key = f.name.removesuffix(".part")
             try:
-                age = time.time() - f.stat().st_mtime
+                if now - f.stat().st_mtime <= grace_seconds:
+                    continue
             except OSError:
                 continue
-            # Grace period: an upload may have written its file but not yet committed its row.
-            if age > 3600 and (key not in known or f.name.endswith(".part")):
-                try:
-                    f.unlink()
-                    removed += 1
-                except OSError:
-                    pass
+            batch.append(f)
+            if len(batch) >= SWEEP_BATCH:
+                await flush()
+    if batch:
+        await flush()
     return removed

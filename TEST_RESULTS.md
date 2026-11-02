@@ -12,15 +12,15 @@ compose projects with throwaway volumes.
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend (pytest, real PostgreSQL 18 + Redis + live uvicorn) | `./scripts/test-backend.sh` | **129 passed, 0 failed** (15.3 s; re-run after the intake-column rule) |
+| Backend (pytest, real PostgreSQL 18 + Redis + live uvicorn) | `./scripts/test-backend.sh` | **141 passed, 0 failed** (15.8 s; re-run after the review fixes) |
 | Frontend (tsc typecheck + Vitest) | `./scripts/test-frontend.sh` | **29 passed, 0 failed** (6 files) |
 | End-to-end (Playwright/Chromium, full stack + Mailpit) | `./scripts/test-e2e.sh` | **7 passed, 0 failed** (11.4 s) |
-| Deployment check (build → health → persistence) | `./scripts/deploy-check.sh` | **25 passed, 0 failed** |
+| Deployment check (build → health → hardening → persistence) | `./scripts/deploy-check.sh` | **31 passed, 0 failed** |
 | Load test (k6) | `./scripts/load-test.sh` | thresholds passed; details below |
 
 No tests are skipped or marked xfail.
 
-## Backend coverage by area (129 cases, 91 % line coverage with greenlet-aware `coverage`)
+## Backend coverage by area (141 cases, 91 % line coverage with greenlet-aware `coverage`)
 
 | File | What it proves |
 |---|---|
@@ -37,6 +37,7 @@ No tests are skipped or marked xfail.
 | `integration/test_realtime.py` (live server) | auth timeout 4408, bad token 4401, cross-site Origin rejected, unauthorized subscriptions denied, **two sessions receive create/move/assign/comment/update events**, **replay of missed events on reconnect**, resync when the gap is too large, presence join/viewing/leave, logout closes sockets, access removal unsubscribes live, reauth must match connection, malformed messages |
 | `integration/test_dashboard_activity.py` | totals/overdue/due-today/by-status/per-project completion/workload/trend values match the seeded records; visibility rules apply to dashboards; task history with field-level diffs; activity pagination |
 | `integration/test_migrations.py` | fresh install, idempotent re-run, `alembic check` (no model drift), downgrade/upgrade; **4 concurrent migration runners ⇒ exactly one applies, all exit 0** |
+| `integration/test_limits.py` | oversized JSON / chunked / multipart bodies → 413 at the API itself; normal requests unaffected; orphan sweep works in small batches, keeps young files and real attachments, removes stale `.part` files |
 | `integration/test_health.py` | liveness/readiness (DB, Redis, schema version), JSON 404 with request id |
 
 ## Frontend (Vitest, 29)
@@ -69,7 +70,15 @@ back on 409, realtime events applied to cache), `validation.test.ts`, `component
 7. UI smoke: dashboard charts, list filtering, task dialog, dark theme, mobile layout and
    navigation drawer, theme persistence — **zero console/page errors**.
 
-## Deployment check (`scripts/deploy-check.sh`, 25/25)
+## Deployment check (`scripts/deploy-check.sh`, 31/31)
+
+Added after the code review: no `.env` tracked by git; the API's `FORWARDED_ALLOW_IPS` equals the
+pinned backend subnet; no HSTS over plain HTTP; **six logins with forged, rotating
+`X-Forwarded-For` (sent directly to the API from an untrusted peer, and again through nginx)
+are locked out on the 6th attempt**. Negative control: with the old `FORWARDED_ALLOW_IPS="*"`
+the direct variant returned 401 six times (no lockout), so the check detects the regression;
+a 1.2 MB JSON body through nginx is rejected 413 by the API middleware.
+
 
 Images build; db/redis/api/web healthy; migrate exited 0; DB/Redis/API not published on the
 host; `/healthz`, liveness, readiness (`schema_version 0001`), `alembic_version` at head; SPA
