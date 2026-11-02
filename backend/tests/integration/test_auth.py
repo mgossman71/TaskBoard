@@ -225,3 +225,27 @@ async def test_refresh_cookie_secure_behind_https(client, settings, monkeypatch)
     assert r.status_code == 201
     cookies = r.headers.get_list("set-cookie")
     assert all("Secure" in c for c in cookies if c.startswith(("tb_refresh=", "tb_csrf=")))
+
+
+async def test_same_origin_refresh_allowed_even_if_not_configured(client, api):
+    """Users may open TaskBoard by IP, hostname or another port than PUBLIC_BASE_URL says:
+    a request whose Origin matches the Host it was sent to is same-origin and allowed;
+    a cross-site Origin is still rejected."""
+    u = await api.register()
+    for k, v in u.cookies.items():
+        client.cookies.set(k, v)
+    csrf = u.cookies.get("tb_csrf")
+    bad = await client.post(
+        "/api/v1/auth/refresh", headers={"x-csrf-token": csrf, "origin": "http://evil.example", "host": "192.168.1.50:8090"}
+    )
+    assert bad.status_code == 403
+    spoof = await client.post(
+        "/api/v1/auth/refresh",
+        headers={"x-csrf-token": csrf, "origin": "http://192.168.1.50:8090", "host": "192.168.1.50:8091"},
+    )
+    assert spoof.status_code == 403  # port differs -> different origin
+    ok = await client.post(
+        "/api/v1/auth/refresh", headers={"x-csrf-token": csrf, "origin": "http://192.168.1.50:8090", "host": "192.168.1.50:8090"}
+    )
+    client.cookies.clear()
+    assert ok.status_code == 200, ok.text

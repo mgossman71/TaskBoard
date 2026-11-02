@@ -116,7 +116,7 @@ Key points
 - **Cross-tab refresh**: the client single-flights refreshes and serializes them across tabs
   with the Web Locks API, so concurrent tabs never trip replay detection.
 - **CSRF**: only `/auth/refresh` and `/auth/logout` read cookies. They require (a) SameSite=Strict
-  cookie, (b) an allowed `Origin`/`Referer` when present, and (c) a double-submit token
+  cookie, (b) an `Origin`/`Referer`, when present, that is either configured or identical to the `Host` the request was sent to (same-origin; nginx forwards the browser's exact Host), and (c) a double-submit token
   (`tb_csrf` cookie must equal `X-CSRF-Token` header). All other endpoints are Bearer-only and
   therefore not CSRF-able.
 - **Brute force**: Redis counters — per-IP request budget on auth endpoints; per (email, IP)

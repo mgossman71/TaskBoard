@@ -42,13 +42,25 @@ limitations.
 ```bash
 git clone https://github.com/mgossman71/TaskBoard.git
 cd TaskBoard
+./scripts/setup.sh
+```
+
+`setup.sh` creates `.env`, generates secrets, keeps port 8080 if it is free (otherwise
+picks the next free port), sets `PUBLIC_BASE_URL` to this host's IP, then runs
+`docker compose up -d --build` and prints the URL to open. Re-running it is safe; use it after
+`git pull` to upgrade. `./scripts/setup.sh --no-start` only writes the configuration.
+
+Manual alternative (the classic steps):
+
+```bash
 cp .env.example .env
 ./scripts/generate-secrets.sh        # replaces placeholder POSTGRES_PASSWORD and JWT_SECRET
 docker compose up -d --build
 docker compose ps                     # db, redis, api, web -> healthy; migrate -> exited (0)
 ```
 
-Open **http://localhost:8080** (or `http://<server>:${APP_PORT}`), click *Create an account*,
+Open the printed URL (default **http://<server>:8080**). Any address that reaches the
+server works (IP or hostname); `PUBLIC_BASE_URL` is only used for links in emails. Click *Create an account*,
 create an organization, a project, and tasks.
 
 Nothing else is required on the host: images are built from source, migrations run
@@ -62,8 +74,8 @@ while `.env` still contains placeholder secrets — it exits with
 ### Updating / restarting
 
 ```bash
-docker compose down              # data is kept in named volumes (pgdata, attachments)
-docker compose up -d --build     # rebuilds images; pending migrations apply automatically
+git pull
+./scripts/setup.sh               # or: docker compose up -d --build (data is kept in named volumes)
 ```
 
 `docker compose down -v` **deletes all data** (volumes) — only use it to reset an installation.
@@ -112,7 +124,7 @@ Every variable is listed (with comments) in [`.env.example`](.env.example).
 | `APP_NAME` | `TaskBoard` | Name used in emails |
 | `APP_ENV` | `production` | `production` enforces strong secrets and hides `/api/docs` |
 | `APP_PORT` / `APP_BIND_ADDRESS` | `8080` / `0.0.0.0` | Published host port / interface of the web container |
-| `PUBLIC_BASE_URL` | `http://localhost:8080` | External URL: emailed links and the allowed browser `Origin` |
+| `PUBLIC_BASE_URL` | `http://localhost:8080` (setup.sh: host IP) | External URL used in emailed links. Browsers may use any address that reaches the server (same-origin requests are always allowed) |
 | `ALLOWED_ORIGINS` | *(empty)* | Extra comma-separated origins for WebSocket/cookie endpoints |
 | `LOG_LEVEL` | `INFO` | API log level |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `taskboard` / `taskboard` / **required** | Database credentials (password must not be a placeholder) |
@@ -154,8 +166,8 @@ touch your deployment's data. Host requirements: Docker, bash, curl.
 VUS=50 DURATION=1m ./scripts/load-test.sh
 ```
 
-Last full run: backend 141 passed · frontend 29 passed · end-to-end 7 passed · deployment
-check 32 passed · load test thresholds met. Details in [TEST_RESULTS.md](TEST_RESULTS.md).
+Last full run: backend 151 passed · frontend 29 passed · end-to-end 7 passed · deployment
+check 33 passed · load test thresholds met. Details in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## Development notes
 
@@ -170,7 +182,7 @@ check 32 passed · load test thresholds met. Details in [TEST_RESULTS.md](TEST_R
 
 | Symptom | Fix |
 |---|---|
-| `Bind for 0.0.0.0:8080 failed: port is already allocated` | Set `APP_PORT` in `.env` to a free port (and `PUBLIC_BASE_URL` accordingly) |
+| `Bind for 0.0.0.0:8080 failed: port is already allocated` | Run `./scripts/setup.sh` (picks a free port), or set `APP_PORT` in `.env` yourself |
 | `service "migrate" didn't complete successfully` | `docker compose logs migrate` — usually placeholder secrets or DB credentials changed after first init |
 | `password authentication failed` / changed `POSTGRES_PASSWORD` after first start (e.g. re-ran `cp .env.example .env`) | PostgreSQL keeps the original password in the volume; run `./scripts/sync-db-password.sh` (sets the DB password to the one in `.env`, keeps data) |
 | Can't log in through an HTTPS proxy | Set `PUBLIC_BASE_URL=https://…` (cookies then become Secure automatically) |

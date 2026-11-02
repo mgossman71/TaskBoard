@@ -23,10 +23,20 @@ CSRF_COOKIE = "tb_csrf"
 CSRF_HEADER = "x-csrf-token"
 
 
-def origin_allowed(origin: str | None) -> bool:
+def origin_allowed(origin: str | None, host: str | None = None) -> bool:
+    """An origin is allowed if it is configured (PUBLIC_BASE_URL / ALLOWED_ORIGINS) or if it
+    is the very host the request was sent to (same-origin). A cross-site page always has a
+    different origin than the target host, so this keeps CSRF/CSWSH protection while not
+    requiring PUBLIC_BASE_URL to match every address (IP, hostname, port) users type."""
     if not origin:
         return False
-    return origin.rstrip("/") in get_settings().origins
+    origin = origin.rstrip("/")
+    if origin in get_settings().origins:
+        return True
+    if host:
+        netloc = urlsplit(origin).netloc.lower()
+        return bool(netloc) and netloc == host.strip().lower()
+    return False
 
 
 def verify_csrf(request: Request) -> None:
@@ -34,7 +44,7 @@ def verify_csrf(request: Request) -> None:
     if origin is None and (referer := request.headers.get("referer")):
         parts = urlsplit(referer)
         origin = f"{parts.scheme}://{parts.netloc}"
-    if origin is not None and not origin_allowed(origin):
+    if origin is not None and not origin_allowed(origin, request.headers.get("host")):
         raise Forbidden("Cross-origin request rejected")
     cookie = request.cookies.get(CSRF_COOKIE)
     header = request.headers.get(CSRF_HEADER)

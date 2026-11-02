@@ -81,3 +81,23 @@ def test_server_trusts_no_forwarded_headers_by_default(monkeypatch):
     monkeypatch.setattr(serve.uvicorn, "run", lambda *a, **kw: captured.update(kw))
     serve.main()
     assert captured["forwarded_allow_ips"] == "127.0.0.1" and captured["proxy_headers"] is True
+
+
+@pytest.mark.parametrize(
+    ("origin", "host", "allowed"),
+    [
+        ("http://testserver", None, True),  # configured
+        ("http://docker0:8090", "docker0:8090", True),  # same-origin, not configured
+        ("https://board.example.com", "board.example.com", True),
+        ("http://docker0:8090", "docker0:8091", False),
+        ("http://evil.example", "docker0:8090", False),
+        ("http://evil.example", None, False),
+        ("null", "null", False),
+        ("", "docker0", False),
+        (None, "docker0", False),
+    ],
+)
+def test_origin_allowed_same_origin_rule(origin, host, allowed):
+    from taskboard.security.csrf import origin_allowed
+
+    assert origin_allowed(origin, host) is allowed

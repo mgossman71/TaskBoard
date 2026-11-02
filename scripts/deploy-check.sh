@@ -72,6 +72,10 @@ check "created org/project/tasks/dependency/comment/attachment" test -n "$ATT"
 echo "== 4. WebSocket through nginx"
 WS=$(python3 tests/deploy/ws_check.py "$BASE" "$TOKEN" "$PROJ" 2>&1 || docker run --rm --network host -v "$PWD/tests/deploy:/t" python:3.13-slim python /t/ws_check.py "$BASE" "$TOKEN" "$PROJ" 2>&1 || true)
 check "WebSocket auth + subscribe via nginx" grep -q WS_OK <<<"$WS"
+# Users may open TaskBoard by another address than PUBLIC_BASE_URL (hostname vs IP):
+ALT="http://localhost:${APP_PORT}"
+WS2=$(python3 tests/deploy/ws_check.py "$ALT" "$TOKEN" "$PROJ" 2>&1 || docker run --rm --network host -v "$PWD/tests/deploy:/t" python:3.13-slim python /t/ws_check.py "$ALT" "$TOKEN" "$PROJ" 2>&1 || true)
+check "WebSocket works when opened via $ALT (not PUBLIC_BASE_URL)" grep -q WS_OK <<<"$WS2"
 
 echo "== 4b. Hardening"
 check "no .env file tracked by git (only .env.example)" sh -c "! git ls-files | grep -E '(^|/)\.env' | grep -vx '.env.example'"

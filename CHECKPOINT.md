@@ -11,7 +11,7 @@ history, realtime (fan-out, replay, presence, revocation), dashboard, complete R
 test suites, load test, documentation.
 
 ## Test status (last run 2026-11-02, see TEST_RESULTS.md)
-- Backend 141/141 · Frontend 29/29 · E2E 7/7 · Deploy check 32/32 · Load test thresholds met.
+- Backend 151/151 · Frontend 29/29 · E2E 7/7 · Deploy check 33/33 · Load test thresholds met.
 - Failing tests: none. Blockers: none.
 
 ## Important decisions

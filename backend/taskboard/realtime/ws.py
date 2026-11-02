@@ -183,7 +183,7 @@ async def _expiry_watchdog(c: Connection) -> None:
 async def websocket_endpoint(ws: WebSocket) -> None:
     s = get_settings()
     origin = ws.headers.get("origin")
-    if origin is not None and not origin_allowed(origin):
+    if origin is not None and not origin_allowed(origin, ws.headers.get("host")):
         # Cross-site WebSocket hijacking protection.
         await ws.close(code=4403)
         return

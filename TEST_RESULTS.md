@@ -12,15 +12,15 @@ compose projects with throwaway volumes.
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend (pytest, real PostgreSQL 18 + Redis + live uvicorn) | `./scripts/test-backend.sh` | **141 passed, 0 failed** (15.8 s; re-run after the review fixes) |
+| Backend (pytest, real PostgreSQL 18 + Redis + live uvicorn) | `./scripts/test-backend.sh` | **151 passed, 0 failed** (15.8 s; latest re-run) |
 | Frontend (tsc typecheck + Vitest) | `./scripts/test-frontend.sh` | **29 passed, 0 failed** (6 files) |
 | End-to-end (Playwright/Chromium, full stack + Mailpit) | `./scripts/test-e2e.sh` | **7 passed, 0 failed** (11.4 s) |
-| Deployment check (build → health → hardening → persistence) | `./scripts/deploy-check.sh` | **32 passed, 0 failed** (also verified with `172.30.0.0/16` pre-occupied by another network) |
+| Deployment check (build → health → hardening → persistence) | `./scripts/deploy-check.sh` | **33 passed, 0 failed** (also verified with `172.30.0.0/16` pre-occupied by another network) |
 | Load test (k6) | `./scripts/load-test.sh` | thresholds passed; details below |
 
 No tests are skipped or marked xfail.
 
-## Backend coverage by area (141 cases, 91 % line coverage with greenlet-aware `coverage`)
+## Backend coverage by area (151 cases, 91 % line coverage with greenlet-aware `coverage`)
 
 | File | What it proves |
 |---|---|
@@ -70,7 +70,7 @@ back on 409, realtime events applied to cache), `validation.test.ts`, `component
 7. UI smoke: dashboard charts, list filtering, task dialog, dark theme, mobile layout and
    navigation drawer, theme persistence — **zero console/page errors**.
 
-## Deployment check (`scripts/deploy-check.sh`, 32/32)
+## Deployment check (`scripts/deploy-check.sh`, 33/33)
 
 Added after the code review: no `.env` tracked by git; nginx's address lies within the API's trusted forwarders and loopback is not trusted; no HSTS over plain HTTP; **six logins with forged, rotating
 `X-Forwarded-For` (sent directly to the API from an untrusted peer, and again through nginx)
@@ -82,7 +82,7 @@ a 1.2 MB JSON body through nginx is rejected 413 by the API middleware.
 Images build; db/redis/api/web healthy; migrate exited 0; DB/Redis/API not published on the
 host; `/healthz`, liveness, readiness (`schema_version 0001`), `alembic_version` at head; SPA
 index, immutable hashed assets, deep-link fallback, CSP header; register/org/project/tasks/
-dependency/comment/attachment created via nginx; **WebSocket auth + subscribe through nginx**;
+dependency/comment/attachment created via nginx; **WebSocket auth + subscribe through nginx**, also when opened via an address other than `PUBLIC_BASE_URL`;
 `docker compose down` → `docker compose up -d --build` → all healthy again; **login works, task,
 comment, dependency, activity and the attachment (byte-identical) all survived**; migrations
 re-ran idempotently.
