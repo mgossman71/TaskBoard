@@ -147,6 +147,6 @@ Results of the last full run are recorded in [TEST_RESULTS.md](TEST_RESULTS.md).
 |---|---|
 | `Bind for 0.0.0.0:8080 failed: port is already allocated` | Set `APP_PORT` in `.env` to a free port (and `PUBLIC_BASE_URL` accordingly) |
 | `service "migrate" didn't complete successfully` | `docker compose logs migrate` — usually placeholder secrets or DB credentials changed after first init |
-| `password authentication failed` / changed `POSTGRES_PASSWORD` after first start (e.g. re-ran `cp .env.example .env`) | PostgreSQL keeps the original password in the volume; revert it or `ALTER USER` inside the db container |
+| `password authentication failed` / changed `POSTGRES_PASSWORD` after first start (e.g. re-ran `cp .env.example .env`) | PostgreSQL keeps the original password in the volume; run `./scripts/sync-db-password.sh` (sets the DB password to the one in `.env`, keeps data) |
 | Can't log in through an HTTPS proxy | Set `COOKIE_SECURE=true` and `PUBLIC_BASE_URL=https://…` |
 | WebSocket status shows "Reconnecting…" behind a proxy | Ensure the proxy forwards `Upgrade`/`Connection` headers for `/api/v1/ws` and the origin matches `PUBLIC_BASE_URL` |
