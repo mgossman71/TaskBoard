@@ -27,7 +27,7 @@ from forgeboard.schemas.project import (
     ProjectSummary,
     ProjectUpdate,
 )
-from forgeboard.schemas.task import ActivityOut, DependencyGraphOut, TaskCreate, TaskOut
+from forgeboard.schemas.task import ActivityOut, DependencyGraphOut, TaskCardOut, TaskCreate, TaskOut
 from forgeboard.services import dashboard as dashboard_svc
 from forgeboard.services import dependencies as dep_svc
 from forgeboard.services import projects as svc
@@ -97,7 +97,7 @@ async def board(project_id: uuid.UUID, auth: Auth, session: Session) -> BoardOut
         columns=[ColumnOut.model_validate(c) for c in columns],
         labels=[LabelOut.model_validate(lab) for lab in labels],
         members=[UserBrief.model_validate(u) for u in members],
-        tasks=await tasks_out(session, tasks),
+        tasks=await tasks_out(session, tasks, TaskCardOut),
         last_event_id=last_id,
         can_edit=access.can_write,
         role=access.role,

@@ -283,3 +283,12 @@ async def test_listing_has_no_n_plus_one(client, api, world, query_counter):
     small = await count_for(3)
     large = await count_for(40)
     assert large == small, f"query count grew with result size: {small} -> {large}"
+
+
+async def test_board_cards_omit_descriptions(client, api, world):
+    pid = world["project"]["id"]
+    t = await api.task(world["member"], pid, "card", description="long text " * 50)
+    board = await api.board(world["member"], pid)
+    assert "description" not in board["tasks"][0]
+    detail = (await client.get(f"/api/v1/tasks/{t['id']}", headers=world["member"].h)).json()
+    assert detail["description"].startswith("long text")

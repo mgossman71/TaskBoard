@@ -20,13 +20,14 @@ class LabelBrief(ORMModel):
     color: str
 
 
-class TaskOut(ORMModel):
+class TaskCardOut(ORMModel):
+    """Compact representation for board cards (no description)."""
+
     id: uuid.UUID
     project_id: uuid.UUID
     column_id: uuid.UUID
     number: int
     title: str
-    description: str
     priority: Priority
     due_date: date | None
     position: float
@@ -39,6 +40,10 @@ class TaskOut(ORMModel):
     labels: list[LabelBrief]
     blocked: bool = False
     dependency_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class TaskOut(TaskCardOut):
+    description: str
 
 
 class TaskCreate(BaseModel):

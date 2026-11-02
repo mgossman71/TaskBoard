@@ -1,0 +1,24 @@
+# Overlay for load testing (project -p forgeboard-load). Raises per-IP limits
+# because every virtual user originates from the single k6 container.
+services:
+  api:
+    environment:
+      IP_AUTH_RATE_PER_MINUTE: "100000"
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-4}
+      DB_POOL_SIZE: "15"
+  web:
+    environment:
+      NGINX_AUTH_RATE: 5000r/s
+      NGINX_API_RATE: 5000r/s
+  k6:
+    image: grafana/k6:1.3.0
+    volumes:
+      - ./tests/load:/load
+    environment:
+      BASE_URL: http://web:8080
+      SEED: /load/results/seed.json
+      VUS: ${VUS:-100}
+      DURATION: ${DURATION:-2m}
+    networks: [frontend]
+    profiles: ["load"]
+    command: ["run", "--summary-export=/load/results/summary.json", "/load/k6.js"]

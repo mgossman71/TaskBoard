@@ -105,12 +105,12 @@ class BoardOut(BaseModel):
     columns: list[ColumnOut]
     labels: list[LabelOut]
     members: list[UserBrief]
-    tasks: list[TaskOut]
+    tasks: list[TaskCardOut]
     last_event_id: int
     can_edit: bool
     role: Role
 
 
-from forgeboard.schemas.task import TaskOut  # noqa: E402
+from forgeboard.schemas.task import TaskCardOut  # noqa: E402
 
 BoardOut.model_rebuild()

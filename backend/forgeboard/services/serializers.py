@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from forgeboard.models import BoardColumn, Task, TaskDependency, User
 from forgeboard.schemas.auth import UserBrief
-from forgeboard.schemas.task import TaskOut
+from forgeboard.schemas.task import TaskCardOut, TaskOut
 
 
 def user_brief(u: User | None) -> dict[str, Any] | None:
@@ -49,11 +49,11 @@ async def dependency_info(
     return deps, blocked
 
 
-async def tasks_out(session: AsyncSession, tasks: list[Task]) -> list[TaskOut]:
+async def tasks_out(session: AsyncSession, tasks: list[Task], schema: type[TaskCardOut] = TaskOut) -> list:
     deps, blocked = await dependency_info(session, [t.id for t in tasks])
     out = []
     for t in tasks:
-        o = TaskOut.model_validate(t)
+        o = schema.model_validate(t)
         o.dependency_ids = deps.get(t.id, [])
         o.blocked = t.id in blocked
         out.append(o)

@@ -93,7 +93,8 @@ export interface Task {
   column_id: string;
   number: number;
   title: string;
-  description: string;
+  /** Omitted from board payloads (cards); present on task detail/list responses. */
+  description?: string;
   priority: Priority;
   due_date: string | null;
   position: number;
@@ -133,6 +134,7 @@ export interface Attachment {
   uploader: UserBrief | null;
 }
 export interface TaskDetail extends Task {
+  description: string;
   comments: Comment[];
   attachments: Attachment[];
   depends_on: TaskRef[];
