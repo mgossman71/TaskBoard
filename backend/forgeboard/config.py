@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Values that appear in .env.example / documentation. The application refuses to
@@ -132,4 +132,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    try:
+        return Settings()
+    except ValidationError as exc:
+        # Print only the messages: the default repr would echo (truncated) input values.
+        messages = "; ".join(str(e.get("msg", "")).removeprefix("Value error, ") for e in exc.errors())
+        raise SystemExit(f"ForgeBoard configuration error: {messages}") from None
