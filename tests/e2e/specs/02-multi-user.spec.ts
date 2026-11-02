@@ -60,8 +60,8 @@ test("Scenario 2: invite a second user, assign, realtime sync across sessions, c
   await a.keyboard.press("Escape");
   await expect(b.getByTestId("task-card").filter({ hasText: "Write & publish press release" })).toBeVisible();
   // Alice creates a new task -> appears for Bob
-  await quickAddTask(a, "In Progress", "Book venue");
-  await expect(column(b, "In Progress").getByTestId("task-card").filter({ hasText: "Book venue" })).toBeVisible();
+  await quickAddTask(a, "To Do", "Book venue");
+  await expect(column(b, "To Do").getByTestId("task-card").filter({ hasText: "Book venue" })).toBeVisible();
   // Bob comments -> Alice sees it live in the open task dialog
   await a.getByTestId("task-card").filter({ hasText: "Book venue" }).click();
   await b.getByTestId("task-card").filter({ hasText: "Book venue" }).click();

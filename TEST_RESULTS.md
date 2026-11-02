@@ -12,7 +12,7 @@ compose projects with throwaway volumes.
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend (pytest, real PostgreSQL 18 + Redis + live uvicorn) | `./scripts/test-backend.sh` | **128 passed, 0 failed** (15.4 s) |
+| Backend (pytest, real PostgreSQL 18 + Redis + live uvicorn) | `./scripts/test-backend.sh` | **129 passed, 0 failed** (15.3 s; re-run after the intake-column rule) |
 | Frontend (tsc typecheck + Vitest) | `./scripts/test-frontend.sh` | **29 passed, 0 failed** (6 files) |
 | End-to-end (Playwright/Chromium, full stack + Mailpit) | `./scripts/test-e2e.sh` | **7 passed, 0 failed** (11.4 s) |
 | Deployment check (build → health → persistence) | `./scripts/deploy-check.sh` | **25 passed, 0 failed** |
@@ -20,7 +20,7 @@ compose projects with throwaway volumes.
 
 No tests are skipped or marked xfail.
 
-## Backend coverage by area (128 cases, 91 % line coverage with greenlet-aware `coverage`)
+## Backend coverage by area (129 cases, 91 % line coverage with greenlet-aware `coverage`)
 
 | File | What it proves |
 |---|---|
@@ -29,7 +29,7 @@ No tests are skipped or marked xfail.
 | `integration/test_auth.py` | register/login/me, case-insensitive uniqueness, 7 invalid-input cases, identical errors for unknown user vs wrong password, forged/`alg=none`/expired JWTs rejected, **refresh rotation + replay ⇒ whole session revoked**, CSRF header/origin enforcement, logout immediate revocation, sessions list/revoke/logout-all, **brute-force lockout (correct password refused while locked)**, IP rate limit, password reset (single use, no enumeration, revokes sessions), change password revokes other sessions |
 | `integration/test_orgs_rbac.py` | invitations (email binding, single use, revocation), full role matrix, members/viewers only see assigned projects, owner-only rules, last-owner protection, atomic member removal (assignments + project memberships), archived = read-only |
 | `integration/test_isolation.py` | user of org B gets **404 on 19 read endpoints and 25 write endpoints** of org A with no secret strings in responses; cannot link A's columns/labels/users/tasks into B; search never returns foreign tasks |
-| `integration/test_tasks.py` | CRUD, numbering never reused, 11 boundary/injection inputs, control-char stripping, malformed ids/bodies/cursors, moves + completion timestamps, 60 inserts at one spot (rebalance), WIP limits, column CRUD/reorder/delete-with-move, labels/assignees, comments permissions, full-text + substring + key search, filters, **keyset pagination without gaps/duplicates**, **constant query count (no N+1)**, compact board cards |
+| `integration/test_tasks.py` | CRUD, numbering never reused, 11 boundary/injection inputs, control-char stripping, malformed ids/bodies/cursors, moves + completion timestamps, 60 inserts at one spot (rebalance), WIP limits, column CRUD/reorder/delete-with-move, labels/assignees, comments permissions, full-text + substring + key search, filters, **keyset pagination without gaps/duplicates**, **constant query count (no N+1)**, compact board cards, **tasks can only be created in the first (intake) column** (incl. after column reorder; rejected requests create nothing) |
 | `integration/test_concurrency.py` | **5 concurrent writers forced past the version check: exactly one 200, four 409 with current state, one history entry**; stale writes rejected without data loss; move vs edit race; 20 concurrent creates get unique numbers; **concurrent A→B / B→A dependency creation cannot form a cycle**; concurrent project edits |
 | `integration/test_transactions.py` | project delete removes tasks/deps/comments/attachments/activity and files, keeps org-level audit; **injected crash after DELETE ⇒ full rollback, files untouched**; task delete keeps history; failed task update leaves no partial assignee changes; org delete cascades |
 | `integration/test_dependencies.py` | add/remove, blocked ⇄ unblocked on completion, readable cycle path, cross-project rejection, topological order with priority tie-break, ready/blocked lists and filters, **3,000 tasks / 5,988 edges: graph 28 ms, cycle check 17 ms** |

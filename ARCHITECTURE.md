@@ -151,6 +151,10 @@ All checks live in `forgeboard/authz.py`; services call a loader before touching
 - Every query is scoped through joins to the caller's memberships; ids from another tenant
   (columns, labels, assignees, dependency targets, dashboard `project_id`) are rejected.
 - At least one owner must always remain. Archived projects are read-only for everyone.
+- **Workflow rule:** new tasks are always created in the project's first (leftmost, "intake")
+  column and then pulled across the board. The API rejects a `column_id` for any other column
+  (422); the UI only offers "Add task" on the first column. The intake is whichever column is
+  first after renames/reorders, and its WIP limit applies to creation.
 - WebSocket subscriptions use the same loader; access changes publish a control message that
   makes every API worker re-authorize that user's live subscriptions.
 
@@ -280,6 +284,7 @@ authorized API with `Content-Disposition: attachment`, `X-Content-Type-Options: 
 
 | Decision | Why | Trade-off |
 |---|---|---|
+| Tasks are created only in the intake (first) column | Enforces planning: work enters the backlog and moves right as it is pulled | Already-started work must be added to the intake column and moved; bulk seeding (`cli seed-load`) bypasses the API by design |
 | One board per project with fully customizable columns | Matches how teams use Kanban; keeps dependency/ordering semantics simple | Multiple boards per project not supported (use multiple projects) |
 | Redis for fan-out/presence/rate limits | Standard, simple, supports N API workers/replicas | One more service (ephemeral, no backups needed) |
 | Separate `migrate` job + advisory lock | No startup race, API never serves an old schema | Slightly longer cold start |

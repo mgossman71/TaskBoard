@@ -49,6 +49,8 @@ class TaskOut(TaskCardOut):
 class TaskCreate(BaseModel):
     title: Title
     description: Description = ""
+    # Optional; if given it must be the project's first (intake) column. Omit it to let
+    # the server place the task there.
     column_id: uuid.UUID | None = None
     priority: Priority = Priority.NONE
     due_date: date | None = None

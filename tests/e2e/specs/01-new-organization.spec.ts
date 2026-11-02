@@ -16,6 +16,9 @@ test("Scenario 1: register, log in, create org/project/task, move it, persists a
   // 4. Create project
   await createProjectViaUI(page, "Website Relaunch", "WEB");
   await expect(column(page, "To Do")).toBeVisible();
+  // Workflow rule: tasks can only be added to the first column
+  await expect(page.getByRole("button", { name: /^Add task to / })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Add task to To Do" })).toBeVisible();
   // 5. Create task
   await quickAddTask(page, "To Do", "Design landing page");
   // 6. Drag it into "In Progress" (real pointer drag); wait for the server to confirm

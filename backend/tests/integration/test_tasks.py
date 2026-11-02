@@ -109,7 +109,7 @@ async def test_many_inserts_at_same_spot_trigger_rebalance(client, api, world):
     second = await api.task(m, pid, "anchor-2")
     moved = []
     for i in range(60):  # repeatedly insert between anchor-1 and its successor
-        t = await api.task(m, pid, f"n{i}", column_id=world["columns"][1]["id"])
+        t = await api.task(m, pid, f"n{i}")
         r = await client.post(f"/api/v1/tasks/{t['id']}/move", json={"version": 1, "column_id": todo, "after_id": first["id"]}, headers=m.h)
         assert r.status_code == 200, r.text
         moved.append(t["title"])
@@ -126,10 +126,43 @@ async def test_wip_limit_enforced(client, api, world):
     col = world["columns"][1]
     r = await client.patch(f"/api/v1/projects/{pid}/columns/{col['id']}", json={"wip_limit": 1}, headers=world["admin"].h)
     assert r.status_code == 200
-    await api.task(world["member"], pid, "in progress", column_id=col["id"])
+    first = await api.task(world["member"], pid, "in progress")
+    r = await client.post(f"/api/v1/tasks/{first['id']}/move", json={"version": 1, "column_id": col["id"]}, headers=world["member"].h)
+    assert r.status_code == 200
     t = await api.task(world["member"], pid, "waiting")
     r = await client.post(f"/api/v1/tasks/{t['id']}/move", json={"version": 1, "column_id": col["id"]}, headers=world["member"].h)
     assert r.status_code == 409 and "WIP" in r.json()["error"]["message"]
+    # the intake column's own WIP limit also applies to task creation
+    todo = world["columns"][0]
+    await client.patch(f"/api/v1/projects/{pid}/columns/{todo['id']}", json={"wip_limit": 1}, headers=world["admin"].h)  # "waiting" already fills it
+    r = await client.post(f"/api/v1/projects/{pid}/tasks", json={"title": "one too many"}, headers=world["member"].h)
+    assert r.status_code == 409 and "WIP" in r.json()["error"]["message"]
+
+
+async def test_tasks_can_only_be_created_in_first_column(client, api, world):
+    pid, m = world["project"]["id"], world["member"]
+    cols = world["columns"]
+    url = f"/api/v1/projects/{pid}/tasks"
+    for later in cols[1:]:
+        r = await client.post(url, json={"title": "skip planning", "column_id": later["id"]}, headers=m.h)
+        assert r.status_code == 422, r.text
+        assert 'first column ("To Do")' in r.json()["error"]["message"]
+    r = await client.post(url, json={"title": "explicit intake", "column_id": cols[0]["id"]}, headers=m.h)
+    assert r.status_code == 201 and r.json()["column_id"] == cols[0]["id"]
+    r = await client.post(url, json={"title": "implicit intake"}, headers=m.h)
+    assert r.status_code == 201 and r.json()["column_id"] == cols[0]["id"]
+    # the rule follows the board order: after reordering, the new leftmost column is the intake
+    order = [cols[1]["id"], cols[0]["id"], cols[2]["id"], cols[3]["id"]]
+    assert (await client.put(f"/api/v1/projects/{pid}/columns/order", json={"column_ids": order}, headers=world["admin"].h)).status_code == 200
+    r = await client.post(url, json={"title": "new intake", "column_id": cols[1]["id"]}, headers=m.h)
+    assert r.status_code == 201
+    r = await client.post(url, json={"title": "old intake", "column_id": cols[0]["id"]}, headers=m.h)
+    assert r.status_code == 422 and 'first column ("In Progress")' in r.json()["error"]["message"]
+    r = await client.post(url, json={"title": "default"}, headers=m.h)
+    assert r.json()["column_id"] == cols[1]["id"]
+    # nothing was created by the rejected requests
+    titles = {t["title"] for t in (await api.board(m, pid))["tasks"]}
+    assert titles == {"explicit intake", "implicit intake", "new intake", "default"}
 
 
 async def test_column_management(client, api, world):

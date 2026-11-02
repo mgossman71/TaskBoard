@@ -97,14 +97,19 @@ def _record(session: AsyncSession, access: ProjectAccess, user: User, type_: str
 
 async def create_task(session: AsyncSession, user: User, project_id: uuid.UUID, data: TaskCreate) -> TaskOut:
     access = await load_project(session, user.id, project_id, Need.WRITE)
-    if data.column_id is not None:
-        col = await _column(session, project_id, data.column_id)
-    else:
-        col = await session.scalar(
-            select(BoardColumn).where(BoardColumn.project_id == project_id).order_by(BoardColumn.position).limit(1)
+    # Workflow rule: new work always enters the intake (leftmost) column and is pulled
+    # across the board from there; it can't be created directly in a later stage.
+    col = await session.scalar(
+        select(BoardColumn).where(BoardColumn.project_id == project_id).order_by(BoardColumn.position).limit(1)
+    )
+    if col is None:
+        raise Conflict("Project has no columns")
+    if data.column_id is not None and data.column_id != col.id:
+        await _column(session, project_id, data.column_id)  # 422 for unknown / foreign columns
+        raise ValidationFailed(
+            f'New tasks must be created in the first column ("{col.name}"). '
+            "Move them across the board as work progresses."
         )
-        if col is None:
-            raise Conflict("Project has no columns")
     if col.wip_limit is not None:
         count = await session.scalar(select(func.count()).where(Task.column_id == col.id))
         if (count or 0) >= col.wip_limit:

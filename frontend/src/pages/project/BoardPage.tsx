@@ -140,7 +140,7 @@ function QuickAdd({ projectId, column }: { projectId: string; column: Column }) 
         if (!parsed.success) return setError(parsed.error.issues[0].message);
         setError(undefined);
         try {
-          await create.mutateAsync({ title: parsed.data, column_id: column.id });
+          await create.mutateAsync({ title: parsed.data }); // server places new tasks in the intake column
           setTitle("");
         } catch (err) {
           toast({ title: "Could not create task", description: err instanceof ApiError ? err.message : undefined, variant: "error" });
@@ -182,7 +182,9 @@ function ColumnView({
   onOpen,
   dragDisabled,
   viewersByTask,
+  isIntake,
 }: {
+  isIntake: boolean;
   column: Column;
   taskIds: string[];
   tasks: Map<string, Task>;
@@ -221,7 +223,8 @@ function ColumnView({
           {taskIds.length === 0 && <p className="faint" style={{ padding: "12px 4px", fontSize: 13 }}>No tasks</p>}
         </div>
       </SortableContext>
-      {board.can_edit && <QuickAdd projectId={board.project.id} column={column} />}
+      {/* New work enters only through the first (intake) column; the API enforces this too. */}
+      {board.can_edit && isIntake && <QuickAdd projectId={board.project.id} column={column} />}
     </section>
   );
 }
@@ -372,9 +375,10 @@ export function BoardPage() {
           }}
         >
           <div className="board" data-testid="board">
-            {board.columns.map((c) => (
+            {board.columns.map((c, i) => (
               <ColumnView
                 key={c.id}
+                isIntake={i === 0}
                 column={c}
                 taskIds={items[c.id] ?? []}
                 tasks={taskMap}
