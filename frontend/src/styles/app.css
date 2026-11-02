@@ -30,6 +30,7 @@
   --primary-soft: #eef0ff;
   --on-primary: #ffffff;
   --danger: #dc2626;
+  --on-danger: #ffffff;
   --danger-soft: #fdecec;
   --success: #15803d;
   --success-soft: #e8f6ec;
@@ -68,6 +69,7 @@
   --primary-soft: #23264a;
   --on-primary: #0d0f13;
   --danger: #f87171;
+  --on-danger: #1f0808;
   --danger-soft: #3a1717;
   --success: #4ade80;
   --success-soft: #12301d;
@@ -256,7 +258,7 @@ a:hover {
 }
 .btn-danger {
   background: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
 }
 .btn-danger:hover:not(:disabled) {
   filter: brightness(0.95);

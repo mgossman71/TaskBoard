@@ -14,4 +14,4 @@ cleanup() { "${COMPOSE[@]}" --profile e2e down -v --remove-orphans >/dev/null 2>
 trap cleanup EXIT
 cleanup
 "${COMPOSE[@]}" up -d --build --wait db redis api web mailpit
-"${COMPOSE[@]}" --profile e2e run --rm e2e "$@"
+"${COMPOSE[@]}" --profile e2e run --rm e2e sh -c "npm ci --no-audit --no-fund >/dev/null && npx playwright test $*"
