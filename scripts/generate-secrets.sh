@@ -34,6 +34,17 @@ set_if_placeholder() {
   esac
 }
 
+PROJECT="$(grep -E '^COMPOSE_PROJECT_NAME=' "$ENV_FILE" | cut -d= -f2- || true)"
+PROJECT="${PROJECT:-${COMPOSE_PROJECT_NAME:-$(basename "$PWD")}}"
+DB_PW_NOW="$(grep -E '^POSTGRES_PASSWORD=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
+case "$DB_PW_NOW" in ""|change-me|changeme|replace-with-secure-random-value)
+  if command -v docker >/dev/null 2>&1 && docker volume inspect "${PROJECT}_pgdata" >/dev/null 2>&1; then
+    echo "WARNING: volume ${PROJECT}_pgdata already exists. PostgreSQL keeps the password it was"
+    echo "         initialised with, so a NEW POSTGRES_PASSWORD will fail with"
+    echo "         'password authentication failed'. Either restore the previous .env, or (if the"
+    echo "         data is disposable) run: docker compose down -v"
+  fi
+esac
 set_if_placeholder POSTGRES_PASSWORD 40
 set_if_placeholder JWT_SECRET 64
 chmod 600 "$ENV_FILE"
