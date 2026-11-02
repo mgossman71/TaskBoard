@@ -1,25 +1,47 @@
 # TaskBoard
 
-A multi-tenant project management platform: organizations, role-based access, projects with
-customizable Kanban boards, tasks with priorities/due dates/labels/assignees, comments,
-attachments, a task dependency engine (cycle prevention, blocked/ready, topological order),
-activity history, dashboards, and real-time collaboration (live updates, presence,
-reconnect-and-replay).
+A self-hosted, multi-tenant project management platform with Kanban boards, task dependencies,
+dashboards and real-time collaboration. One command deploys it with Docker Compose.
 
 **Stack:** React 19 + TypeScript + Vite · FastAPI (Python 3.13) · SQLAlchemy 2 + Alembic ·
 PostgreSQL 18 · Redis 7.4 · WebSockets · nginx · Docker Compose.
 Tests: Pytest · Vitest · Playwright · k6.
 
+## Features
+
+- **Organizations and roles:** Owner, Admin, Member and Viewer roles, email invitations, strict
+  per-organization data isolation (enforced server-side).
+- **Kanban boards:** customizable columns (rename, reorder, WIP limits, "done" flag) and drag &
+  drop with optimistic updates.
+- **Pull-based workflow:** new tasks always enter the first column ("To Do") and are moved
+  across the board as work progresses. The API enforces this too.
+- **Tasks:** priorities, due dates, labels, multiple assignees, comments, attachments, full
+  modification history.
+- **Dependencies:** cycle prevention with a readable explanation, blocked / ready lists, and a
+  valid execution order (topological sort).
+- **Real-time:** live updates across sessions, presence ("who's here / viewing this task"),
+  automatic reconnection with replay of missed updates.
+- **Safe concurrent editing:** if two people edit the same task, one save wins and the other
+  sees a conflict with the latest version. Changes are never silently overwritten.
+- **Dashboards:** tasks by status, overdue counts, project completion, workload per person,
+  created vs completed trend, activity timeline. All computed live from the database.
+- **Search and lists:** full-text and key search (`WEB-42`), filters, sorting, cursor
+  pagination.
+- **Accounts:** Argon2id passwords, rotating refresh tokens with theft detection, session list
+  and revocation, password reset, brute-force lockout.
+- **UI:** light and dark themes, responsive/mobile layout, accessible forms and dialogs.
+
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the design, [TEST_RESULTS.md](TEST_RESULTS.md) for
-measured results and [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for limitations.
+measured results (including a 100-user load test) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for
+limitations.
 
 ---
 
 ## Deploy (clean Ubuntu 24.04 with Docker Engine + Compose plugin)
 
 ```bash
-git clone <repository-url>
-cd taskboard
+git clone https://github.com/mgossman71/TaskBoard.git
+cd TaskBoard
 cp .env.example .env
 ./scripts/generate-secrets.sh        # replaces placeholder POSTGRES_PASSWORD and JWT_SECRET
 docker compose up -d --build
@@ -132,7 +154,8 @@ touch your deployment's data. Host requirements: Docker, bash, curl.
 VUS=50 DURATION=1m ./scripts/load-test.sh
 ```
 
-Results of the last full run are recorded in [TEST_RESULTS.md](TEST_RESULTS.md).
+Last full run: backend 141 passed · frontend 29 passed · end-to-end 7 passed · deployment
+check 31 passed · load test thresholds met. Details in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## Development notes
 
