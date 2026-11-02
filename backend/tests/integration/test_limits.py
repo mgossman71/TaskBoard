@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from forgeboard.main import JSON_BODY_LIMIT
+from taskboard.main import JSON_BODY_LIMIT
 
 pytestmark = pytest.mark.asyncio
 
@@ -46,8 +46,8 @@ async def test_normal_requests_unaffected(client, api, world):
 
 
 async def test_orphan_sweep_is_batched_and_respects_grace(client, api, world, settings, monkeypatch):
-    import forgeboard.services.attachments as att
-    from forgeboard.db import get_sessionmaker
+    import taskboard.services.attachments as att
+    from taskboard.db import get_sessionmaker
 
     t = await api.task(world["member"], world["project"]["id"])
     kept = []

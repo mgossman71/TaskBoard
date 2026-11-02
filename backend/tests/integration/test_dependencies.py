@@ -4,8 +4,8 @@ import uuid
 import pytest
 from sqlalchemy import insert, select, update
 
-from forgeboard.db import get_sessionmaker
-from forgeboard.models import BoardColumn, Project, Task, TaskDependency
+from taskboard.db import get_sessionmaker
+from taskboard.models import BoardColumn, Project, Task, TaskDependency
 
 pytestmark = pytest.mark.asyncio
 

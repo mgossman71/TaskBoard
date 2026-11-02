@@ -1,5 +1,5 @@
 {
-  "name": "forgeboard-e2e",
+  "name": "taskboard-e2e",
   "private": true,
   "type": "module",
   "scripts": { "test": "playwright test" },

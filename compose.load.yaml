@@ -1,4 +1,4 @@
-# Overlay for load testing (project -p forgeboard-load). Raises per-IP limits
+# Overlay for load testing (project -p taskboard-load). Raises per-IP limits
 # because every virtual user originates from the single k6 container.
 services:
   api:

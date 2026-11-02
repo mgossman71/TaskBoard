@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Mirrors the server-side password policy (backend/forgeboard/schemas/auth.py). */
+/** Mirrors the server-side password policy (backend/taskboard/schemas/auth.py). */
 export const passwordSchema = z
   .string()
   .min(10, "Use at least 10 characters")

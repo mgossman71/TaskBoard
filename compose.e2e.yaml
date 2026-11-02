@@ -1,4 +1,4 @@
-# Overlay for end-to-end tests: isolated project (-p forgeboard-e2e), real SMTP
+# Overlay for end-to-end tests: isolated project (-p taskboard-e2e), real SMTP
 # delivery to Mailpit, relaxed rate limits (all browsers share one IP) and a
 # Playwright runner on the same network.
 services:

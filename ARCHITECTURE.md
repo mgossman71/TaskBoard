@@ -1,8 +1,8 @@
-# ForgeBoard — Architecture
+# TaskBoard — Architecture
 
 ## 1. Overview
 
-ForgeBoard is a multi-tenant project-management platform: organizations → projects → Kanban
+TaskBoard is a multi-tenant project-management platform: organizations → projects → Kanban
 boards → tasks, with dependencies, comments, attachments, activity history, dashboards and
 real-time collaboration.
 
@@ -31,7 +31,7 @@ healthy → `api` healthy (`/api/health/ready` checks DB, Redis and schema versi
 ## 2. Code layout
 
 ```
-backend/forgeboard/
+backend/taskboard/
   config.py          env-only settings; refuses placeholder secrets in production
   db.py              async engine/session; naming convention for constraints
   models/            SQLAlchemy 2 ORM models (one module per aggregate)
@@ -117,7 +117,7 @@ Key points
   with the Web Locks API, so concurrent tabs never trip replay detection.
 - **CSRF**: only `/auth/refresh` and `/auth/logout` read cookies. They require (a) SameSite=Strict
   cookie, (b) an allowed `Origin`/`Referer` when present, and (c) a double-submit token
-  (`fb_csrf` cookie must equal `X-CSRF-Token` header). All other endpoints are Bearer-only and
+  (`tb_csrf` cookie must equal `X-CSRF-Token` header). All other endpoints are Bearer-only and
   therefore not CSRF-able.
 - **Brute force**: Redis counters — per-IP request budget on auth endpoints; per (email, IP)
   lockout after `LOGIN_MAX_FAILURES` in the window; per-account lockout at 4× that threshold
@@ -133,7 +133,7 @@ Key points
 
 ## 5. Authorization (RBAC + tenant isolation)
 
-All checks live in `forgeboard/authz.py`; services call a loader before touching data.
+All checks live in `taskboard/authz.py`; services call a loader before touching data.
 
 | Capability | Owner | Admin | Member | Viewer |
 |---|:-:|:-:|:-:|:-:|
@@ -213,7 +213,7 @@ Server → client: `ready`, `event {id, type, payload(snapshot), actor…}`, `su
 `project_deleted`, `error`, `pong`. Close codes: 4401 auth/session, 4403 origin, 4408 auth
 timeout, 1012 server restart, 1013 slow consumer.
 
-- **Fan-out**: after commit, events are published to Redis channel `fb:project:<id>`; every API
+- **Fan-out**: after commit, events are published to Redis channel `tb:project:<id>`; every API
   worker holds one pattern subscription and forwards the *already-serialized* string to its
   local subscribers (no per-recipient serialization). Each connection has a bounded queue and
   its own writer task; a slow consumer is disconnected instead of stalling others.

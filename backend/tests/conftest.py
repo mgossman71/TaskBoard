@@ -16,9 +16,9 @@ import httpx
 import pytest
 from sqlalchemy import event, text
 
-from forgeboard.cache import get_redis
-from forgeboard.config import get_settings
-from forgeboard.db import Base, get_engine
+from taskboard.cache import get_redis
+from taskboard.config import get_settings
+from taskboard.db import Base, get_engine
 
 ORIGIN = "http://testserver"
 PASSWORD = "Corr3ct-Horse-Battery!"
@@ -35,7 +35,7 @@ async def clean_state(request) -> AsyncIterator[None]:
     if "unit" in request.node.nodeid.split("/"):
         yield
         return
-    import forgeboard.models  # noqa: F401
+    import taskboard.models  # noqa: F401
 
     tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)
     async with get_engine().begin() as conn:
@@ -49,7 +49,7 @@ async def clean_state(request) -> AsyncIterator[None]:
 
 @pytest.fixture
 async def client() -> AsyncIterator[httpx.AsyncClient]:
-    from forgeboard.main import app
+    from taskboard.main import app
 
     transport = httpx.ASGITransport(app=app, client=("10.0.0.1", 1234))
     async with httpx.AsyncClient(transport=transport, base_url=ORIGIN, headers={"origin": ORIGIN}) as c:
@@ -181,8 +181,8 @@ def captured_emails(monkeypatch) -> list[dict[str, str]]:
     async def fake_send(to: str, subject: str, body: str) -> None:
         sent.append({"to": to, "subject": subject, "body": body})
 
-    import forgeboard.services.auth as auth_mod
-    import forgeboard.services.orgs as orgs_mod
+    import taskboard.services.auth as auth_mod
+    import taskboard.services.orgs as orgs_mod
 
     monkeypatch.setattr(auth_mod, "send_email", fake_send)
     monkeypatch.setattr(orgs_mod, "send_email", fake_send)

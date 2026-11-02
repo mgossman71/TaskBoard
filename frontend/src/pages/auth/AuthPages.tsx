@@ -15,9 +15,9 @@ export function AuthCard({ title, subtitle, children }: { title: string; subtitl
       <div className="card auth-card">
         <div className="brand">
           <span className="brand-mark" aria-hidden>
-            F
+            T
           </span>
-          ForgeBoard
+          TaskBoard
         </div>
         <h1>{title}</h1>
         {subtitle && <p className="muted" style={{ marginBottom: 20 }}>{subtitle}</p>}

@@ -1,4 +1,4 @@
-"""Initial ForgeBoard schema
+"""Initial TaskBoard schema
 
 Revision ID: 0001
 Revises: 

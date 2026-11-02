@@ -140,7 +140,7 @@ export function AppShell() {
   useEffect(() => {
     if (orgId) {
       try {
-        localStorage.setItem("fb-last-org", orgId);
+        localStorage.setItem("tb-last-org", orgId);
       } catch {
         /* ignore */
       }
@@ -156,9 +156,9 @@ export function AppShell() {
       <aside className={`sidebar${open ? " open" : ""}`} aria-label="Sidebar">
         <Link to="/" className="brand">
           <span className="brand-mark" aria-hidden>
-            F
+            T
           </span>
-          ForgeBoard
+          TaskBoard
         </Link>
         <OrgSwitcher orgId={orgId} />
         {orgId && (

@@ -16,9 +16,9 @@ async def test_register_login_me(client, api):
     assert "password" not in r.text and "hash" not in r.text
     r = await client.post("/api/v1/auth/login", json={"email": "ALICE@example.com", "password": PASSWORD})
     assert r.status_code == 200
-    assert "fb_refresh" in r.cookies and "fb_csrf" in r.cookies
+    assert "tb_refresh" in r.cookies and "tb_csrf" in r.cookies
     set_cookie = r.headers.get_list("set-cookie")
-    refresh_cookie = next(c for c in set_cookie if c.startswith("fb_refresh="))
+    refresh_cookie = next(c for c in set_cookie if c.startswith("tb_refresh="))
     assert "HttpOnly" in refresh_cookie and "SameSite=strict" in refresh_cookie and "Path=/api/v1/auth" in refresh_cookie
 
 
@@ -71,7 +71,7 @@ async def test_unauthenticated_and_tampered_tokens_rejected(client, api, setting
 
 
 def _refresh_headers(cookies: httpx.Cookies) -> dict[str, str]:
-    return {"x-csrf-token": cookies.get("fb_csrf") or "", "origin": ORIGIN}
+    return {"x-csrf-token": cookies.get("tb_csrf") or "", "origin": ORIGIN}
 
 
 async def _refresh(client, cookies: httpx.Cookies) -> httpx.Response:
@@ -88,9 +88,9 @@ async def test_refresh_rotation_and_replay_detection(client, api):
     old = httpx.Cookies(u.cookies)
     r1 = await _refresh(client, old)
     assert r1.status_code == 200, r1.text
-    new_refresh = r1.cookies.get("fb_refresh")
-    assert new_refresh and new_refresh != old.get("fb_refresh")
-    new_cookies = httpx.Cookies({"fb_refresh": new_refresh, "fb_csrf": r1.cookies.get("fb_csrf")})
+    new_refresh = r1.cookies.get("tb_refresh")
+    assert new_refresh and new_refresh != old.get("tb_refresh")
+    new_cookies = httpx.Cookies({"tb_refresh": new_refresh, "tb_csrf": r1.cookies.get("tb_csrf")})
     new_access = r1.json()["access_token"]
     assert (await client.get("/api/v1/auth/me", headers={"authorization": f"Bearer {new_access}"})).status_code == 200
 
@@ -105,12 +105,12 @@ async def test_refresh_rotation_and_replay_detection(client, api):
 
 async def test_refresh_requires_csrf_token_and_same_origin(client, api):
     u = await api.register()
-    client.cookies.set("fb_refresh", u.cookies.get("fb_refresh"))
-    client.cookies.set("fb_csrf", u.cookies.get("fb_csrf"))
+    client.cookies.set("tb_refresh", u.cookies.get("tb_refresh"))
+    client.cookies.set("tb_csrf", u.cookies.get("tb_csrf"))
     r = await client.post("/api/v1/auth/refresh")  # no CSRF header
     assert r.status_code == 403
     r = await client.post(
-        "/api/v1/auth/refresh", headers={"x-csrf-token": u.cookies.get("fb_csrf"), "origin": "https://evil.example"}
+        "/api/v1/auth/refresh", headers={"x-csrf-token": u.cookies.get("tb_csrf"), "origin": "https://evil.example"}
     )
     assert r.status_code == 403
     r = await client.post("/api/v1/auth/refresh", headers={"x-csrf-token": "wrong", "origin": ORIGIN})
@@ -224,4 +224,4 @@ async def test_refresh_cookie_secure_behind_https(client, settings, monkeypatch)
     client.cookies.clear()
     assert r.status_code == 201
     cookies = r.headers.get_list("set-cookie")
-    assert all("Secure" in c for c in cookies if c.startswith(("fb_refresh=", "fb_csrf=")))
+    assert all("Secure" in c for c in cookies if c.startswith(("tb_refresh=", "tb_csrf=")))

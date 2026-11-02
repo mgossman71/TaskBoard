@@ -29,7 +29,7 @@ export function DependenciesPage() {
   if (data.edges.length === 0)
     return (
       <EmptyState title="No dependencies yet">
-        Open a task and use “Depends on” to declare that it can't start until another task is done. ForgeBoard prevents cycles and computes
+        Open a task and use “Depends on” to declare that it can't start until another task is done. TaskBoard prevents cycles and computes
         which tasks are blocked or ready.
       </EmptyState>
     );

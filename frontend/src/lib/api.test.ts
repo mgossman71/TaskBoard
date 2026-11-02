@@ -12,7 +12,7 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 describe("api client", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
   beforeEach(() => {
-    document.cookie = "fb_csrf=csrf123";
+    document.cookie = "tb_csrf=csrf123";
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     setTokens(tokenResp("old"));
@@ -61,7 +61,7 @@ describe("api client", () => {
   });
 
   it("returns null from refreshSession without a CSRF cookie", async () => {
-    document.cookie = "fb_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "tb_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     await expect(refreshSession()).resolves.toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });

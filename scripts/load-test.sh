@@ -5,7 +5,7 @@
 #   VUS=100 DURATION=2m ./scripts/load-test.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
-export COMPOSE_PROJECT_NAME=forgeboard-load
+export COMPOSE_PROJECT_NAME=taskboard-load
 export APP_PORT="${LOAD_APP_PORT:-18100}"
 export APP_BIND_ADDRESS=127.0.0.1
 export BACKEND_SUBNET=172.30.253.0/24   # distinct from the main stack so both can run
@@ -18,7 +18,7 @@ trap cleanup EXIT
 cleanup
 mkdir -p tests/load/results
 "${COMPOSE[@]}" up -d --build --wait
-"${COMPOSE[@]}" exec -T api python -m forgeboard.cli seed-load --users 100 --tasks 10000 --projects 5 --out /tmp/seed.json
+"${COMPOSE[@]}" exec -T api python -m taskboard.cli seed-load --users 100 --tasks 10000 --projects 5 --out /tmp/seed.json
 "${COMPOSE[@]}" exec -T api cat /tmp/seed.json > tests/load/results/seed.json
 "${COMPOSE[@]}" --profile load run --rm k6 2>&1 | tee tests/load/results/k6-output.txt
 "${COMPOSE[@]}" exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select count(*) as tasks from tasks"' | tee -a tests/load/results/k6-output.txt

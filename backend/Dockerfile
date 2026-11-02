@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # ---------------------------------------------------------------------------
-# ForgeBoard API image (multi-stage)
+# TaskBoard API image (multi-stage)
 #   builder  -> resolves locked production dependencies into /opt/venv
 #   test     -> builder + dev dependencies + tests (used by compose.test.yaml)
 #   runtime  -> slim, non-root production image (default target)
@@ -20,15 +20,15 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-install-project
-COPY forgeboard ./forgeboard
+COPY taskboard ./taskboard
 # --reinstall-package: never reuse a cached wheel of the app itself (its version
 # number does not change between builds, so the uv cache would serve stale code).
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev --no-editable --reinstall-package forgeboard
+    uv sync --locked --no-dev --no-editable --reinstall-package taskboard
 
 FROM builder AS test
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-editable --reinstall-package forgeboard
+    uv sync --locked --no-editable --reinstall-package taskboard
 ENV PATH="/opt/venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 COPY alembic.ini ./
 COPY alembic ./alembic
@@ -54,4 +54,4 @@ EXPOSE 8000
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=5 \
   CMD ["python", "-c", "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health/ready', timeout=4).status == 200 else 1)"]
-CMD ["python", "-m", "forgeboard.serve"]
+CMD ["python", "-m", "taskboard.serve"]

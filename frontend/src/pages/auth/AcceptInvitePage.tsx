@@ -30,7 +30,7 @@ export function AcceptInvitePage() {
   if (!token || preview.isError)
     return (
       <AuthCard title="Invitation unavailable" subtitle="This invitation link is invalid, expired, or has already been used.">
-        <Link to="/">Go to ForgeBoard</Link>
+        <Link to="/">Go to TaskBoard</Link>
       </AuthCard>
     );
   if (preview.isLoading || status === "loading") return <LoadingState />;

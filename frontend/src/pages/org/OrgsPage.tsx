@@ -16,7 +16,7 @@ export function RootRedirect() {
   if (!data?.length) return <Navigate to="/orgs" replace />;
   let last: string | null = null;
   try {
-    last = localStorage.getItem("fb-last-org");
+    last = localStorage.getItem("tb-last-org");
   } catch {
     /* ignore */
   }

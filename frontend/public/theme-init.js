@@ -2,7 +2,7 @@
 // Served as a same-origin file so the Content-Security-Policy can forbid inline scripts.
 (function () {
   try {
-    var t = localStorage.getItem("fb-theme");
+    var t = localStorage.getItem("tb-theme");
     if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
   } catch (e) {}
 })();

@@ -1,4 +1,4 @@
-# ForgeBoard reverse proxy. Rendered by envsubst at container start.
+# TaskBoard reverse proxy. Rendered by envsubst at container start.
 
 map $http_upgrade $connection_upgrade {
     default upgrade;

@@ -14,3 +14,6 @@ tests/e2e/playwright-report/
 tests/load/results/
 *.log
 .DS_Store
+# Recorded test evidence referenced by TEST_RESULTS.md (kept verbatim)
+!tests/results/*.log
+!tests/deploy/last-run.log

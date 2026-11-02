@@ -1,0 +1,36 @@
+== 1. Build images and start stack
+  PASS  docker compose up -d --build
+  PASS  all services healthy
+NAME                             IMAGE                   COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+forgeboard-deploycheck-api-1     forgeboard-api:latest   "python -m forgeboar…"   api       19 seconds ago   Up 12 seconds (healthy)   8000/tcp
+forgeboard-deploycheck-db-1      postgres:18.6-alpine    "docker-entrypoint.s…"   db        19 seconds ago   Up 19 seconds (healthy)   5432/tcp
+forgeboard-deploycheck-redis-1   redis:7.4.12-alpine     "docker-entrypoint.s…"   redis     19 seconds ago   Up 19 seconds (healthy)   6379/tcp
+forgeboard-deploycheck-web-1     forgeboard-web:latest   "/docker-entrypoint.…"   web       19 seconds ago   Up 7 seconds (healthy)    127.0.0.1:18090->8080/tcp
+  PASS  migrate job exited 0
+  PASS  postgres/redis/api not published on host
+== 2. Endpoints
+  PASS  nginx /healthz
+  PASS  API liveness
+  PASS  API readiness reports schema head 0001
+  PASS  alembic_version table at head
+  PASS  frontend index served
+  PASS  hashed JS asset served with immutable caching
+  PASS  SPA deep link returns index (refresh-safe)
+  PASS  security headers present
+== 3. Create data through the public endpoint
+  PASS  register user
+  PASS  created org/project/tasks/dependency/comment/attachment
+== 4. WebSocket through nginx
+  PASS  WebSocket auth + subscribe via nginx
+== 5. Recreate containers (down + up --build) and verify persistence
+  PASS  docker compose down
+  PASS  docker compose up -d --build (again)
+  PASS  all services healthy after recreation
+  PASS  user account survived (login works)
+  PASS  task survived
+  PASS  comment survived
+  PASS  dependency survived
+  PASS  activity history survived
+  PASS  attachment file survived (byte-identical)
+  PASS  migrations re-ran idempotently (exit 0)
+== Result: 25 passed, 0 failed

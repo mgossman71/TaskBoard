@@ -1,0 +1,249 @@
+
+################ backend ################
+ Image forgeboard-test-api-test Building 
+ Image forgeboard-test-api-test Built 
+ Network forgeboard-test_default Creating 
+ Network forgeboard-test_default Creating 
+ Network forgeboard-test_default Created 
+ Network forgeboard-test_default Created 
+ Container forgeboard-test-test-redis-1 Creating 
+ Container forgeboard-test-test-db-1 Creating 
+ Container forgeboard-test-test-db-1 Created 
+ Container forgeboard-test-test-redis-1 Created 
+ Container forgeboard-test-test-db-1 Starting 
+ Container forgeboard-test-test-redis-1 Starting 
+ Container forgeboard-test-test-db-1 Started 
+ Container forgeboard-test-test-redis-1 Started 
+ Container forgeboard-test-test-redis-1 Waiting 
+ Container forgeboard-test-test-db-1 Waiting 
+ Container forgeboard-test-test-redis-1 Healthy 
+ Container forgeboard-test-test-db-1 Healthy 
+ Container forgeboard-test-api-test-run-e30db3faa49b Creating 
+ Container forgeboard-test-api-test-run-e30db3faa49b Created 
+........................................................................ [ 56%]
+........................................................                 [100%]
+128 passed in 15.41s
+
+################ frontend ################
+
+> forgeboard-frontend@1.0.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+
+> forgeboard-frontend@1.0.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /app
+
+ ✓ src/lib/board.test.ts (5 tests) 4ms
+ ✓ src/lib/realtime.test.ts (4 tests) 7ms
+ ✓ src/lib/api.test.ts (5 tests) 25ms
+ ✓ src/lib/validation.test.ts (7 tests) 4ms
+ ✓ src/lib/queries.test.tsx (4 tests) 126ms
+ ✓ src/components/components.test.tsx (4 tests) 252ms
+
+ Test Files  6 passed (6)
+      Tests  29 passed (29)
+   Start at  17:15:28
+   Duration  950ms (environment 60%, tests 13%, transform 12%, import 7%, setup 7%, worker 1%)
+
+
+################ e2e ################
+ Image forgeboard-web:latest Building 
+ Image forgeboard-api:latest Building 
+ Image forgeboard-api:latest Building 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Image forgeboard-web:latest Built 
+ Image forgeboard-api:latest Built 
+ Image forgeboard-api:latest Built 
+ Network forgeboard-e2e_frontend Creating 
+ Volume forgeboard-e2e_pgdata Creating 
+ Volume forgeboard-e2e_pgdata Creating 
+ Network forgeboard-e2e_backend Creating 
+ Network forgeboard-e2e_frontend Creating 
+ Network forgeboard-e2e_backend Creating 
+ Volume forgeboard-e2e_attachments Creating 
+ Volume forgeboard-e2e_attachments Creating 
+ Volume forgeboard-e2e_pgdata Created 
+ Volume forgeboard-e2e_pgdata Created 
+ Volume forgeboard-e2e_attachments Created 
+ Volume forgeboard-e2e_attachments Created 
+ Network forgeboard-e2e_frontend Created 
+ Network forgeboard-e2e_frontend Created 
+ Network forgeboard-e2e_backend Created 
+ Network forgeboard-e2e_backend Created 
+ Container forgeboard-e2e-redis-1 Creating 
+ Container forgeboard-e2e-db-1 Creating 
+ Container forgeboard-e2e-mailpit-1 Creating 
+ Container forgeboard-e2e-mailpit-1 Created 
+ Container forgeboard-e2e-redis-1 Created 
+ Container forgeboard-e2e-db-1 Created 
+ Container forgeboard-e2e-migrate-1 Creating 
+ Container forgeboard-e2e-migrate-1 Created 
+ Container forgeboard-e2e-api-1 Creating 
+ Container forgeboard-e2e-api-1 Created 
+ Container forgeboard-e2e-web-1 Creating 
+ Container forgeboard-e2e-web-1 Created 
+ Container forgeboard-e2e-db-1 Starting 
+ Container forgeboard-e2e-redis-1 Starting 
+ Container forgeboard-e2e-mailpit-1 Starting 
+ Container forgeboard-e2e-db-1 Started 
+ Container forgeboard-e2e-db-1 Waiting 
+ Container forgeboard-e2e-redis-1 Started 
+ Container forgeboard-e2e-mailpit-1 Started 
+ Container forgeboard-e2e-db-1 Healthy 
+ Container forgeboard-e2e-migrate-1 Starting 
+ Container forgeboard-e2e-migrate-1 Started 
+ Container forgeboard-e2e-redis-1 Waiting 
+ Container forgeboard-e2e-migrate-1 Waiting 
+ Container forgeboard-e2e-db-1 Waiting 
+ Container forgeboard-e2e-redis-1 Healthy 
+ Container forgeboard-e2e-db-1 Healthy 
+ Container forgeboard-e2e-migrate-1 Exited 
+ Container forgeboard-e2e-api-1 Starting 
+ Container forgeboard-e2e-api-1 Started 
+ Container forgeboard-e2e-api-1 Waiting 
+ Container forgeboard-e2e-api-1 Healthy 
+ Container forgeboard-e2e-web-1 Starting 
+ Container forgeboard-e2e-web-1 Started 
+ Container forgeboard-e2e-migrate-1 Waiting 
+ Container forgeboard-e2e-api-1 Waiting 
+ Container forgeboard-e2e-web-1 Waiting 
+ Container forgeboard-e2e-mailpit-1 Waiting 
+ Container forgeboard-e2e-db-1 Waiting 
+ Container forgeboard-e2e-redis-1 Waiting 
+ Container forgeboard-e2e-api-1 Healthy 
+ Container forgeboard-e2e-redis-1 Healthy 
+ Container forgeboard-e2e-migrate-1 Exited 
+ Container forgeboard-e2e-mailpit-1 Healthy 
+ Container forgeboard-e2e-db-1 Healthy 
+ Container forgeboard-e2e-web-1 Healthy 
+ Container forgeboard-e2e-redis-1 Running 
+ Container forgeboard-e2e-mailpit-1 Running 
+ Container forgeboard-e2e-api-1 Running 
+ Container forgeboard-e2e-web-1 Running 
+ Container forgeboard-e2e-db-1 Running 
+ Container forgeboard-e2e-db-1 Waiting 
+ Container forgeboard-e2e-db-1 Healthy 
+ Container forgeboard-e2e-migrate-1 Starting 
+ Container forgeboard-e2e-migrate-1 Started 
+ Container forgeboard-e2e-db-1 Waiting 
+ Container forgeboard-e2e-redis-1 Waiting 
+ Container forgeboard-e2e-migrate-1 Waiting 
+ Container forgeboard-e2e-redis-1 Healthy 
+ Container forgeboard-e2e-db-1 Healthy 
+ Container forgeboard-e2e-migrate-1 Exited 
+ Container forgeboard-e2e-api-1 Waiting 
+ Container forgeboard-e2e-api-1 Healthy 
+ Container forgeboard-e2e-mailpit-1 Waiting 
+ Container forgeboard-e2e-web-1 Waiting 
+ Container forgeboard-e2e-mailpit-1 Healthy 
+ Container forgeboard-e2e-web-1 Healthy 
+ Container forgeboard-e2e-e2e-run-dd6ba619af86 Creating 
+ Container forgeboard-e2e-e2e-run-dd6ba619af86 Created 
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/01-new-organization.spec.ts:4:1 › Scenario 1: register, log in, create org/project/task, move it, persists after refresh (2.3s)
+  ✓  2 [chromium] › specs/02-multi-user.spec.ts:4:1 › Scenario 2: invite a second user, assign, realtime sync across sessions, conflicting edits (3.1s)
+  ✓  3 [chromium] › specs/02-multi-user.spec.ts:110:1 › Realtime: reconnects and recovers updates missed while offline (1.5s)
+  ✓  4 [chromium] › specs/03-authorization.spec.ts:4:1 › Scenario 3: cross-organization access is rejected and leaks nothing (640ms)
+  ✓  5 [chromium] › specs/03-authorization.spec.ts:61:1 › Viewer role is read-only in the UI and API (552ms)
+  ✓  6 [chromium] › specs/04-password-reset.spec.ts:6:1 › Password reset via emailed link (SMTP -> Mailpit) (607ms)
+  ✓  7 [chromium] › specs/05-ui-smoke.spec.ts:31:1 › Dashboard, list view, themes and mobile layout render without errors (2.0s)
+
+  7 passed (11.4s)
+
+################ deploy ################
+== 1. Build images and start stack
+  PASS  docker compose up -d --build
+  PASS  all services healthy
+NAME                             IMAGE                   COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+forgeboard-deploycheck-api-1     forgeboard-api:latest   "python -m forgeboar…"   api       20 seconds ago   Up 12 seconds (healthy)   8000/tcp
+forgeboard-deploycheck-db-1      postgres:18.6-alpine    "docker-entrypoint.s…"   db        20 seconds ago   Up 19 seconds (healthy)   5432/tcp
+forgeboard-deploycheck-redis-1   redis:7.4.12-alpine     "docker-entrypoint.s…"   redis     20 seconds ago   Up 19 seconds (healthy)   6379/tcp
+forgeboard-deploycheck-web-1     forgeboard-web:latest   "/docker-entrypoint.…"   web       20 seconds ago   Up 7 seconds (healthy)    127.0.0.1:18090->8080/tcp
+  PASS  migrate job exited 0
+  PASS  postgres/redis/api not published on host
+== 2. Endpoints
+  PASS  nginx /healthz
+  PASS  API liveness
+  PASS  API readiness reports schema head 0001
+  PASS  alembic_version table at head
+  PASS  frontend index served
+  PASS  hashed JS asset served with immutable caching
+  PASS  SPA deep link returns index (refresh-safe)
+  PASS  security headers present
+== 3. Create data through the public endpoint
+  PASS  register user
+  PASS  created org/project/tasks/dependency/comment/attachment
+== 4. WebSocket through nginx
+  PASS  WebSocket auth + subscribe via nginx
+== 5. Recreate containers (down + up --build) and verify persistence
+  PASS  docker compose down
+  PASS  docker compose up -d --build (again)
+  PASS  all services healthy after recreation
+  PASS  user account survived (login works)
+  PASS  task survived
+  PASS  comment survived
+  PASS  dependency survived
+  PASS  activity history survived
+  PASS  attachment file survived (byte-identical)
+  PASS  migrations re-ran idempotently (exit 0)
+== Result: 25 passed, 0 failed
+
+================ SUMMARY ================
+backend    PASS
+frontend   PASS
+e2e        PASS
+deploy     PASS

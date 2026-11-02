@@ -7,7 +7,7 @@
 # Requires only bash, curl and Docker on the host.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-export COMPOSE_PROJECT_NAME=forgeboard-deploycheck
+export COMPOSE_PROJECT_NAME=taskboard-deploycheck
 export APP_PORT="${CHECK_APP_PORT:-18090}"
 export APP_BIND_ADDRESS=127.0.0.1
 export BACKEND_SUBNET=172.30.252.0/24   # distinct from the main stack so both can run

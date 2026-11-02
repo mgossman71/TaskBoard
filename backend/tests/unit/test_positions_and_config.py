@@ -1,10 +1,10 @@
 import pytest
 from pydantic import ValidationError
 
-from forgeboard.config import Settings
-from forgeboard.domain.positions import STEP, position_between, rebalanced
-from forgeboard.security.passwords import hash_password, verify_password
-from forgeboard.services.attachments import sanitize_filename
+from taskboard.config import Settings
+from taskboard.domain.positions import STEP, position_between, rebalanced
+from taskboard.security.passwords import hash_password, verify_password
+from taskboard.services.attachments import sanitize_filename
 
 
 def test_position_between():
@@ -74,7 +74,7 @@ def test_cookie_secure_derived_from_public_url(base_url, explicit, expected):
 
 
 def test_server_trusts_no_forwarded_headers_by_default(monkeypatch):
-    import forgeboard.serve as serve
+    import taskboard.serve as serve
 
     captured = {}
     monkeypatch.delenv("FORWARDED_ALLOW_IPS", raising=False)

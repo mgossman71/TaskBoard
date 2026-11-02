@@ -25,7 +25,7 @@ Status legend: ✅ done and verified by automated tests · 🟡 done, partially 
 
 - One Kanban board per project (customizable columns) — see ARCHITECTURE.md §13.
 - Web service is named `web` (nginx serving the SPA and acting as reverse proxy).
-- Load-test fixture data is created only by the explicit `forgeboard.cli seed-load` command; the
+- Load-test fixture data is created only by the explicit `taskboard.cli seed-load` command; the
   application never seeds demo data.
 
 ## Possible next steps (not required by the brief)

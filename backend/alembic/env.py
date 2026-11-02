@@ -16,12 +16,12 @@ from sqlalchemy import pool, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import forgeboard.models  # noqa: F401  (registers tables)
+import taskboard.models  # noqa: F401  (registers tables)
 from alembic import context
-from forgeboard.config import get_settings
-from forgeboard.db import Base
+from taskboard.config import get_settings
+from taskboard.db import Base
 
-MIGRATION_LOCK_KEY = 0x464F5247  # "FORG"
+MIGRATION_LOCK_KEY = 0x5441534B  # "TASK"
 
 config = context.config
 if config.config_file_name is not None and config.attributes.get("configure_logger", True):

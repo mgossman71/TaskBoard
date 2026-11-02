@@ -96,7 +96,7 @@ healthy; registered, created org/project/task via the public port; `docker compo
 `docker compose up -d --build` → the project and task were still present. (APP_PORT was set to
 18200 only because port 8080 is used by another container on this machine.)
 Negative checks: with placeholder secrets the stack refuses to start
-(`ForgeBoard configuration error: Insecure production configuration: …`); without `.env`,
+(`TaskBoard configuration error: Insecure production configuration: …`); without `.env`,
 compose stops with `POSTGRES_PASSWORD must be set - run ./scripts/generate-secrets.sh`.
 
 ### Other verified properties

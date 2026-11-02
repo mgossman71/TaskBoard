@@ -18,7 +18,7 @@ WS_URL = f"ws://127.0.0.1:{PORT}/api/v1/ws"
 
 @pytest.fixture(scope="session")
 async def live_server():
-    from forgeboard.main import app
+    from taskboard.main import app
 
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=PORT, log_level="warning", lifespan="on"))
     task = asyncio.create_task(server.serve())

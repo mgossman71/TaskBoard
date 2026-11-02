@@ -5,9 +5,9 @@ from pathlib import Path
 import pytest
 from sqlalchemy import func, select
 
-import forgeboard.services.projects as projects_module
-from forgeboard.db import get_sessionmaker
-from forgeboard.models import ActivityEvent, Attachment, Comment, Task, TaskDependency
+import taskboard.services.projects as projects_module
+from taskboard.db import get_sessionmaker
+from taskboard.models import ActivityEvent, Attachment, Comment, Task, TaskDependency
 
 pytestmark = pytest.mark.asyncio
 
@@ -103,7 +103,7 @@ async def test_delete_task_cascades_but_keeps_history(client, api, world):
 async def test_failed_task_update_does_not_partially_apply(client, api, world, monkeypatch):
     pid, m = world["project"]["id"], world["member"]
     t = await api.task(m, pid, "atomic", assignee_ids=[m.id])
-    import forgeboard.services.tasks as tasks_module
+    import taskboard.services.tasks as tasks_module
 
     real = tasks_module.task_snapshot
 

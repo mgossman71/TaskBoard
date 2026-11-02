@@ -1,4 +1,4 @@
-// ForgeBoard load test: 100 concurrent active users against an org with 10,000 tasks.
+// TaskBoard load test: 100 concurrent active users against an org with 10,000 tasks.
 // Scenario "api": each VU logs in once (setup) and loops realistic requests.
 // Scenario "realtime": 100 WebSocket clients stay subscribed and count events.
 import http from "k6/http";
@@ -13,13 +13,13 @@ const DURATION = __ENV.DURATION || "2m";
 const VUS = Number(__ENV.VUS || 100);
 
 const wsEvents = new Counter("ws_events_received");
-const listLatency = new Trend("fb_list_tasks", true);
-const searchLatency = new Trend("fb_search_tasks", true);
-const boardLatency = new Trend("fb_board", true);
-const updateLatency = new Trend("fb_update_task", true);
-const moveLatency = new Trend("fb_move_task", true);
-const dashLatency = new Trend("fb_dashboard", true);
-const graphLatency = new Trend("fb_dependency_graph", true);
+const listLatency = new Trend("tb_list_tasks", true);
+const searchLatency = new Trend("tb_search_tasks", true);
+const boardLatency = new Trend("tb_board", true);
+const updateLatency = new Trend("tb_update_task", true);
+const moveLatency = new Trend("tb_move_task", true);
+const dashLatency = new Trend("tb_dashboard", true);
+const graphLatency = new Trend("tb_dependency_graph", true);
 
 export const options = {
   setupTimeout: "5m",

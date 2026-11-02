@@ -1,0 +1,20 @@
+#!/bin/sh
+# Sourced by the nginx image entrypoint before template substitution.
+set -e
+# Allow a little multipart overhead above the application upload limit.
+export NGINX_CLIENT_MAX_BODY="$(( ${MAX_UPLOAD_MB:-10} + 1 ))m"
+# Trusted reverse proxies (comma separated CIDRs) whose X-Forwarded-For is honoured.
+REALIP=""
+OLDIFS="$IFS"; IFS=','
+for cidr in ${TRUSTED_PROXY_CIDRS:-127.0.0.1/32}; do
+  cidr="$(echo "$cidr" | tr -d ' ')"
+  [ -n "$cidr" ] && REALIP="${REALIP}set_real_ip_from ${cidr}; "
+done
+IFS="$OLDIFS"
+export NGINX_REALIP_DIRECTIVES="$REALIP"
+# HSTS is only meaningful when users reach TaskBoard over HTTPS (TLS terminated in front).
+if [ "${HSTS_ENABLED:-false}" = "true" ]; then
+  export NGINX_HSTS_DIRECTIVE='add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;'
+else
+  export NGINX_HSTS_DIRECTIVE=''
+fi

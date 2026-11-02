@@ -1,9 +1,9 @@
 /**
- * HTTP client for the ForgeBoard API.
+ * HTTP client for the TaskBoard API.
  *
  * - Access token lives only in memory; it is attached as a Bearer header.
  * - The refresh token is an HttpOnly cookie; refreshing sends the double-submit
- *   CSRF header read from the `fb_csrf` cookie.
+ *   CSRF header read from the `tb_csrf` cookie.
  * - Refreshes are single-flight within a tab and serialized across tabs with the
  *   Web Locks API, so concurrent refreshes never present an already-rotated
  *   token (which the server treats as token theft).
@@ -92,7 +92,7 @@ async function parseError(res: Response): Promise<ApiError> {
 }
 
 async function doRefresh(): Promise<TokenResponse | null> {
-  const csrf = readCookie("fb_csrf");
+  const csrf = readCookie("tb_csrf");
   if (!csrf) return null;
   const res = await fetch(`${BASE}/auth/refresh`, {
     method: "POST",
@@ -111,7 +111,7 @@ export function refreshSession(): Promise<TokenResponse | null> {
   if (!refreshPromise) {
     const run = async () => {
       const locks = (navigator as any).locks;
-      const resp = locks?.request ? await locks.request("forgeboard-refresh", doRefresh) : await doRefresh();
+      const resp = locks?.request ? await locks.request("taskboard-refresh", doRefresh) : await doRefresh();
       setTokens(resp);
       return resp as TokenResponse | null;
     };
@@ -187,7 +187,7 @@ export const api = {
 
 /** Unauthenticated / cookie endpoints used by the auth flows. */
 export async function logoutRequest() {
-  const csrf = readCookie("fb_csrf") ?? "";
+  const csrf = readCookie("tb_csrf") ?? "";
   await fetch(`${BASE}/auth/logout`, {
     method: "POST",
     credentials: "same-origin",

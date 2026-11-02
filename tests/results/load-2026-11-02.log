@@ -1,0 +1,266 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+seeded org 3d630a21-b0b2-4979-8cce-d69aeed4e078: 100 users, 5 projects, 10000 tasks -> /tmp/seed.json
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /load/k6.js
+        output: -
+
+     scenarios: (100.00%) 2 scenarios, 200 max VUs, 2m30s max duration (incl. graceful stop):
+              * api: 100 looping VUs for 2m0s (exec: api, gracefulStop: 30s)
+              * realtime: 100 looping VUs for 2m0s (exec: realtime, gracefulStop: 30s)
+
+
+Run        [ 100% ] setup()
+
+Run        [ 100% ] setup()
+
+Run        [ 100% ] setup()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+api      ↓ [ 100% ] 100 VUs  2m0s
+realtime ↓ [ 100% ] 100 VUs  2m0s
+
+api      ↓ [ 100% ] 100 VUs  2m0s
+realtime ✓ [ 100% ] 100 VUs  2m0s
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{scenario:api}
+    ✓ 'p(95)<1000' p(95)=142.7ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 24374   193.605273/s
+    checks_succeeded...: 100.00% 24374 out of 24374
+    checks_failed......: 0.00%   0 out of 24374
+
+    ✓ login 200
+    ✓ list 200
+    ✓ search 200
+    ✓ update 200/409
+    ✓ dashboard 200
+    ✓ board 200
+    ✓ graph 200
+    ✓ ws 101
+
+    CUSTOM
+    fb_board.......................: avg=368.18ms med=133.28ms p(90)=1.11s    p(95)=2.39s    p(99)=2.88s    max=3.3s    
+    fb_dashboard...................: avg=86.04ms  med=34.41ms  p(90)=197.41ms p(95)=398.32ms p(99)=693.43ms max=1.04s   
+    fb_dependency_graph............: avg=123.41ms med=34.86ms  p(90)=358.17ms p(95)=518.91ms p(99)=1.51s    max=2.46s   
+    fb_list_tasks..................: avg=27.23ms  med=9.37ms   p(90)=62.82ms  p(95)=109.94ms p(99)=253.94ms max=945.55ms
+    fb_move_task...................: avg=31.3ms   med=11.63ms  p(90)=75.7ms   p(95)=126.11ms p(99)=289.37ms max=508.96ms
+    fb_search_tasks................: avg=33.08ms  med=20.45ms  p(90)=67.64ms  p(95)=112.48ms p(99)=237.1ms  max=443.09ms
+    fb_update_task.................: avg=30.39ms  med=11ms     p(90)=74.76ms  p(95)=124.26ms p(99)=274.93ms max=560.56ms
+
+    HTTP
+    http_req_duration..............: avg=40.49ms  med=14.07ms  p(90)=82.55ms  p(95)=142.55ms p(99)=357.74ms max=3.3s    
+      { expected_response:true }...: avg=40.49ms  med=14.07ms  p(90)=82.55ms  p(95)=142.55ms p(99)=357.74ms max=3.3s    
+      { scenario:api }.............: avg=40.5ms   med=14.01ms  p(90)=82.82ms  p(95)=142.7ms  p(99)=357.99ms max=3.3s    
+    http_req_failed................: 0.00%  0 out of 38259
+    http_reqs......................: 38259  303.895305/s
+
+    EXECUTION
+    iteration_duration.............: avg=3.32s    med=1.67s    p(90)=2.17s    p(95)=2.88s    p(99)=1m0s     max=1m0s    
+    iterations.....................: 7240   57.50809/s
+    vus............................: 36     min=0          max=200
+    vus_max........................: 200    min=200        max=200
+
+    NETWORK
+    data_received..................: 2.3 GB 18 MB/s
+    data_sent......................: 24 MB  192 kB/s
+
+    WEBSOCKET
+    ws_connecting..................: avg=31.81ms  med=23.93ms  p(90)=73.63ms  p(95)=79.37ms  p(99)=92.56ms  max=128.87ms
+    ws_events_received.............: 234495 1862.618715/s
+    ws_msgs_received...............: 240267 1908.466325/s
+    ws_msgs_sent...................: 842    6.688096/s
+    ws_session_duration............: avg=1m0s     med=1m0s     p(90)=1m0s     p(95)=1m0s     p(99)=1m0s     max=1m0s    
+    ws_sessions....................: 200    1.588621/s
+
+
+
+
+api      ✓ [ 100% ] 100 VUs  2m0s
+realtime ✓ [ 100% ] 100 VUs  2m0s
+ tasks 
+-------
+ 10000
+(1 row)
+

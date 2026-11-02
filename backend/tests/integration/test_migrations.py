@@ -9,10 +9,10 @@ import subprocess
 import asyncpg
 import pytest
 
-from forgeboard.config import get_settings
+from taskboard.config import get_settings
 
 pytestmark = pytest.mark.asyncio
-SCRATCH = "forgeboard_migration_test"
+SCRATCH = "taskboard_migration_test"
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 

@@ -1,6 +1,6 @@
-# ForgeBoard production deployment.
+# TaskBoard production deployment.
 #   cp .env.example .env && ./scripts/generate-secrets.sh && docker compose up -d --build
-name: ${COMPOSE_PROJECT_NAME:-forgeboard}
+name: ${COMPOSE_PROJECT_NAME:-taskboard}
 
 x-logging: &default-logging
   driver: json-file
@@ -9,15 +9,15 @@ x-logging: &default-logging
     max-file: "5"
 
 x-backend-env: &backend-env
-  APP_NAME: ${APP_NAME:-ForgeBoard}
+  APP_NAME: ${APP_NAME:-TaskBoard}
   APP_ENV: ${APP_ENV:-production}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
   PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
   ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
   POSTGRES_HOST: db
   POSTGRES_PORT: "5432"
-  POSTGRES_DB: ${POSTGRES_DB:-forgeboard}
-  POSTGRES_USER: ${POSTGRES_USER:-forgeboard}
+  POSTGRES_DB: ${POSTGRES_DB:-taskboard}
+  POSTGRES_USER: ${POSTGRES_USER:-taskboard}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set - run ./scripts/generate-secrets.sh}
   DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
   DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
@@ -37,7 +37,7 @@ x-backend-env: &backend-env
   MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
   ATTACHMENTS_DIR: /data/attachments
   EMAIL_BACKEND: ${EMAIL_BACKEND:-console}
-  EMAIL_FROM: ${EMAIL_FROM:-ForgeBoard <no-reply@forgeboard.local>}
+  EMAIL_FROM: ${EMAIL_FROM:-TaskBoard <no-reply@taskboard.local>}
   SMTP_HOST: ${SMTP_HOST:-}
   SMTP_PORT: ${SMTP_PORT:-587}
   SMTP_USERNAME: ${SMTP_USERNAME:-}
@@ -50,8 +50,8 @@ services:
     image: postgres:18.6-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-forgeboard}
-      POSTGRES_USER: ${POSTGRES_USER:-forgeboard}
+      POSTGRES_DB: ${POSTGRES_DB:-taskboard}
+      POSTGRES_USER: ${POSTGRES_USER:-taskboard}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set - run ./scripts/generate-secrets.sh}
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     command:
@@ -105,7 +105,7 @@ services:
     build:
       context: ./backend
       target: runtime
-    image: forgeboard-api:${FORGEBOARD_VERSION:-latest}
+    image: taskboard-api:${TASKBOARD_VERSION:-latest}
     command: ["alembic", "upgrade", "head"]
     restart: "no"
     environment: *backend-env
@@ -122,7 +122,7 @@ services:
     build:
       context: ./backend
       target: runtime
-    image: forgeboard-api:${FORGEBOARD_VERSION:-latest}
+    image: taskboard-api:${TASKBOARD_VERSION:-latest}
     restart: unless-stopped
     init: true
     environment:
@@ -162,7 +162,7 @@ services:
     build:
       context: ./frontend
       target: runtime
-    image: forgeboard-web:${FORGEBOARD_VERSION:-latest}
+    image: taskboard-web:${TASKBOARD_VERSION:-latest}
     restart: unless-stopped
     environment:
       API_UPSTREAM: api:8000
@@ -200,7 +200,7 @@ networks:
     # db/redis/api live only on this network; only `web` publishes a host port.
     # The subnet is pinned so the API can trust X-Forwarded-For from it (and nothing else).
     # Change BACKEND_SUBNET if it collides with a network on your host, and give each
-    # ForgeBoard installation on the same host its own subnet.
+    # TaskBoard installation on the same host its own subnet.
     ipam:
       config:
         - subnet: ${BACKEND_SUBNET:-172.30.250.0/24}

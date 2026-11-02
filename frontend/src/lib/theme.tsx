@@ -13,7 +13,7 @@ function systemPrefersDark() {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeChoice>(() => {
     try {
-      const t = localStorage.getItem("fb-theme");
+      const t = localStorage.getItem("tb-theme");
       return t === "light" || t === "dark" ? t : "system";
     } catch {
       return "system";
@@ -37,8 +37,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = (t: ThemeChoice) => {
     setThemeState(t);
     try {
-      if (t === "system") localStorage.removeItem("fb-theme");
-      else localStorage.setItem("fb-theme", t);
+      if (t === "system") localStorage.removeItem("tb-theme");
+      else localStorage.setItem("tb-theme", t);
     } catch {
       /* storage unavailable */
     }

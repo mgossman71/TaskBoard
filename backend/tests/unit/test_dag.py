@@ -5,7 +5,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from forgeboard.domain import dag
+from taskboard.domain import dag
 
 
 def test_self_dependency_is_cycle():

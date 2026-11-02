@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # ---------------------------------------------------------------------------
-# ForgeBoard web image (multi-stage)
+# TaskBoard web image (multi-stage)
 #   deps    -> npm ci from the lockfile (reproducible)
 #   test    -> runs typecheck + vitest (used by compose.test.yaml)
 #   build   -> production Vite build
@@ -26,7 +26,7 @@ FROM ${NGINX_IMAGE} AS runtime
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY nginx/proxy-headers.conf /etc/nginx/snippets/proxy-headers.conf
-COPY --chmod=0755 nginx/10-forgeboard.envsh /docker-entrypoint.d/10-forgeboard.envsh
+COPY --chmod=0755 nginx/10-taskboard.envsh /docker-entrypoint.d/10-taskboard.envsh
 COPY --from=build /app/dist /usr/share/nginx/html
 ENV API_UPSTREAM=api:8000 \
     MAX_UPLOAD_MB=10 \

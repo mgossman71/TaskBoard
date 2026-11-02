@@ -5,8 +5,8 @@ import asyncio
 
 import pytest
 
-import forgeboard.services.dependencies as dep_module
-import forgeboard.services.tasks as task_module
+import taskboard.services.dependencies as dep_module
+import taskboard.services.tasks as task_module
 
 pytestmark = pytest.mark.asyncio
 

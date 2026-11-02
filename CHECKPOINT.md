@@ -22,7 +22,7 @@ placeholder secrets; `EMAIL_BACKEND=console` default; board uses compact card sc
 ## Key files
 - Deployment: `compose.yaml`, `.env.example`, `backend/Dockerfile`, `frontend/Dockerfile`,
   `frontend/nginx/*`, `scripts/generate-secrets.sh`
-- Backend core: `backend/forgeboard/{authz.py,services/,realtime/,domain/dag.py}`
+- Backend core: `backend/taskboard/{authz.py,services/,realtime/,domain/dag.py}`
 - Migration: `backend/alembic/versions/20261102_0001_initial_schema.py`
 - Frontend core: `frontend/src/lib/{api.ts,realtime.ts,queries.ts,board.ts}`,
   `frontend/src/pages/project/{BoardPage,TaskDialog}.tsx`
@@ -31,7 +31,7 @@ placeholder secrets; `EMAIL_BACKEND=console` default; board uses compact card sc
 
 ## Resume / verify
 ```bash
-cd forgeboard
+cd taskboard
 cp .env.example .env && ./scripts/generate-secrets.sh   # first time only
 docker compose up -d --build
 ./scripts/run-all-tests.sh            # add --with-load for the k6 run

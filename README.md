@@ -1,4 +1,4 @@
-# ForgeBoard
+# TaskBoard
 
 A multi-tenant project management platform: organizations, role-based access, projects with
 customizable Kanban boards, tasks with priorities/due dates/labels/assignees, comments,
@@ -19,7 +19,7 @@ measured results and [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for limitations.
 
 ```bash
 git clone <repository-url>
-cd forgeboard
+cd taskboard
 cp .env.example .env
 ./scripts/generate-secrets.sh        # replaces placeholder POSTGRES_PASSWORD and JWT_SECRET
 docker compose up -d --build
@@ -32,7 +32,7 @@ create an organization, a project, and tasks.
 Nothing else is required on the host: images are built from source, migrations run
 automatically, and the API waits for the database. The API **refuses to start in production**
 while `.env` still contains placeholder secrets — it exits with
-`ForgeBoard configuration error: … Run ./scripts/generate-secrets.sh`.
+`TaskBoard configuration error: … Run ./scripts/generate-secrets.sh`.
 
 > `generate-secrets.sh` uses `openssl` if present, otherwise a throwaway `python` container.
 > Edit `.env` before the first start if you need a different port or public URL.
@@ -67,9 +67,9 @@ the UI. For real delivery set `EMAIL_BACKEND=smtp` and the `SMTP_*` variables.
 ### Backups
 
 ```bash
-docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > forgeboard.dump
-docker run --rm -v forgeboard_attachments:/data -v "$PWD":/backup alpine tar czf /backup/attachments.tgz -C /data .
-# restore: pg_restore --clean --if-exists -U forgeboard -d forgeboard < forgeboard.dump (inside the db container)
+docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > taskboard.dump
+docker run --rm -v taskboard_attachments:/data -v "$PWD":/backup alpine tar czf /backup/attachments.tgz -C /data .
+# restore: pg_restore --clean --if-exists -U taskboard -d taskboard < taskboard.dump (inside the db container)
 ```
 
 ### Logs and health
@@ -87,13 +87,13 @@ Every variable is listed (with comments) in [`.env.example`](.env.example).
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `APP_NAME` | `ForgeBoard` | Name used in emails |
+| `APP_NAME` | `TaskBoard` | Name used in emails |
 | `APP_ENV` | `production` | `production` enforces strong secrets and hides `/api/docs` |
 | `APP_PORT` / `APP_BIND_ADDRESS` | `8080` / `0.0.0.0` | Published host port / interface of the web container |
 | `PUBLIC_BASE_URL` | `http://localhost:8080` | External URL: emailed links and the allowed browser `Origin` |
 | `ALLOWED_ORIGINS` | *(empty)* | Extra comma-separated origins for WebSocket/cookie endpoints |
 | `LOG_LEVEL` | `INFO` | API log level |
-| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `forgeboard` / `forgeboard` / **required** | Database credentials (password must not be a placeholder) |
+| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `taskboard` / `taskboard` / **required** | Database credentials (password must not be a placeholder) |
 | `POSTGRES_MAX_CONNECTIONS` / `POSTGRES_SHARED_BUFFERS` | `200` / `256MB` | PostgreSQL tuning |
 | `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | `10` / `10` | SQLAlchemy pool per API worker |
 | `WEB_CONCURRENCY` | `2` | uvicorn worker processes |
@@ -136,7 +136,7 @@ Results of the last full run are recorded in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## Development notes
 
-- Backend lint: `docker run --rm -v "$PWD/backend":/app -w /app forgeboard-test-api-test ruff check forgeboard`
+- Backend lint: `docker run --rm -v "$PWD/backend":/app -w /app taskboard-test-api-test ruff check taskboard`
 - New migration: change models, then
   `docker compose run --rm migrate alembic revision --autogenerate -m "describe change"` and
   review the file in `backend/alembic/versions/`. CI-style drift check: `test_migrations.py`
@@ -152,5 +152,5 @@ Results of the last full run are recorded in [TEST_RESULTS.md](TEST_RESULTS.md).
 | `password authentication failed` / changed `POSTGRES_PASSWORD` after first start (e.g. re-ran `cp .env.example .env`) | PostgreSQL keeps the original password in the volume; run `./scripts/sync-db-password.sh` (sets the DB password to the one in `.env`, keeps data) |
 | Can't log in through an HTTPS proxy | Set `PUBLIC_BASE_URL=https://…` (cookies then become Secure automatically) |
 | `Pool overlaps with other one on this address space` / `invalid pool request` | `BACKEND_SUBNET` collides with an existing Docker or host network; pick another private /24 in `.env` |
-| `network forgeboard_backend … needs to be recreated` after upgrading | `docker compose down` (keeps data) then `docker compose up -d --build` |
+| `network taskboard_backend … needs to be recreated` after upgrading | `docker compose down` (keeps data) then `docker compose up -d --build` |
 | WebSocket status shows "Reconnecting…" behind a proxy | Ensure the proxy forwards `Upgrade`/`Connection` headers for `/api/v1/ws` and the origin matches `PUBLIC_BASE_URL` |

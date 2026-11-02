@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 ENV_FILE="${1:-.env}"
 get() { awk -F= -v k="$1" '$1==k{print substr($0, index($0,"=")+1); exit}' "$ENV_FILE"; }
 PW="$(get POSTGRES_PASSWORD)"; USER_="$(get POSTGRES_USER)"; DB="$(get POSTGRES_DB)"
-USER_="${USER_:-forgeboard}"; DB="${DB:-forgeboard}"
+USER_="${USER_:-taskboard}"; DB="${DB:-taskboard}"
 [ -n "$PW" ] || { echo "POSTGRES_PASSWORD is empty in $ENV_FILE" >&2; exit 1; }
 docker compose up -d db >/dev/null
 printf 'ALTER USER %s WITH PASSWORD :%s;\n' "\"$USER_\"" "'pw'" \
