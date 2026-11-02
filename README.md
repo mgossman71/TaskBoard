@@ -177,3 +177,7 @@ check 31 passed · load test thresholds met. Details in [TEST_RESULTS.md](TEST_R
 | `Pool overlaps with other one on this address space` / `invalid pool request` | `BACKEND_SUBNET` collides with an existing Docker or host network; pick another private /24 in `.env` |
 | `network taskboard_backend … needs to be recreated` after upgrading | `docker compose down` (keeps data) then `docker compose up -d --build` |
 | WebSocket status shows "Reconnecting…" behind a proxy | Ensure the proxy forwards `Upgrade`/`Connection` headers for `/api/v1/ws` and the origin matches `PUBLIC_BASE_URL` |
+
+## License
+
+[MIT](LICENSE) © 2026 Mark Gossman
