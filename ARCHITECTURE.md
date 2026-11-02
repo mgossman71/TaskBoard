@@ -251,7 +251,7 @@ authorized API with `Content-Disposition: attachment`, `X-Content-Type-Options: 
 | Secrets | env vars only; production refuses placeholder/short secrets; `generate-secrets.sh` |
 | Container hardening | non-root (uid 10001 / nginx 101 / redis 999), read-only root FS + tmpfs, `cap_drop: ALL`, `no-new-privileges`, DB/Redis/API not published |
 | Clickjacking / sniffing | `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, Referrer-Policy |
-| Client IP spoofing | nginx overwrites `X-Forwarded-For` with `$remote_addr`; only `TRUSTED_PROXY_CIDRS` are honoured by the realip module; the API trusts forwarded headers only from the pinned `BACKEND_SUBNET` (default elsewhere: nobody), verified by a forged-header lockout check |
+| Client IP spoofing | nginx overwrites `X-Forwarded-For` with `$remote_addr`; only `TRUSTED_PROXY_CIDRS` are honoured by the realip module; the API trusts forwarded headers only from Docker private ranges (`API_TRUSTED_FORWARDERS`; loopback/public never; outside compose: nobody), verified by a forged-header lockout check |
 | Oversized requests | nginx `client_max_body_size` plus an ASGI middleware in the API (JSON ≤ 1 MB, multipart ≤ upload limit + 1 MB, chunked bodies counted) → 413 even without nginx |
 | Transport | Session cookies are `Secure` automatically for an `https://` `PUBLIC_BASE_URL`; opt-in HSTS (`HSTS_ENABLED`) for HTTPS deployments |
 

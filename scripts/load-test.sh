@@ -8,7 +8,6 @@ cd "$(dirname "$0")/.."
 export COMPOSE_PROJECT_NAME=taskboard-load
 export APP_PORT="${LOAD_APP_PORT:-18100}"
 export APP_BIND_ADDRESS=127.0.0.1
-export BACKEND_SUBNET=172.30.253.0/24   # distinct from the main stack so both can run
 export PUBLIC_BASE_URL=http://web:8080
 export POSTGRES_PASSWORD="load-$(date +%s)-password"
 export JWT_SECRET="load-jwt-secret-$(date +%s)-0123456789abcdefghijklmnop"

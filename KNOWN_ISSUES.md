@@ -53,10 +53,12 @@ Honest list of what is incomplete, unverified, or a deliberate trade-off.
 15. Copying a session's cookies to another browser and using both will trigger refresh-token
     reuse detection and sign both out (intended theft protection).
 
-16a. The internal network uses a pinned subnet (`BACKEND_SUBNET`, default `172.30.250.0/24`) so
-    the API can restrict which peers may set `X-Forwarded-For`. It can collide with an existing
-    network, and two installations on one host need different values (the test scripts use
-    `172.30.251–253.0/24`).
+16a. The API trusts `X-Forwarded-For` from Docker's private address ranges (not from loopback
+    or public addresses). Only TaskBoard's own containers can reach the API, and nginx always
+    overwrites the header, so this is safe in the default deployment. A container you attach to
+    the internal network yourself would be trusted. Narrow `API_TRUSTED_FORWARDERS` if your
+    Docker address pools are known. (A fixed subnet was tried and removed: it collided with
+    existing networks on real hosts.)
 
 ## Minor
 

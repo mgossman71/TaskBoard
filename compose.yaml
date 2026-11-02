@@ -128,8 +128,10 @@ services:
     environment:
       <<: *backend-env
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
-      # Trust X-Forwarded-For only from the backend network (nginx); see networks below.
-      FORWARDED_ALLOW_IPS: ${BACKEND_SUBNET:-172.30.250.0/24}
+      # Peers allowed to set the client address via X-Forwarded-For. The API is reachable
+      # only from the internal backend network (Docker private ranges), where nginx
+      # overwrites the header; anything else (e.g. 127.0.0.1) is not trusted.
+      FORWARDED_ALLOW_IPS: ${API_TRUSTED_FORWARDERS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
       GRACEFUL_SHUTDOWN_SECONDS: "20"
     depends_on:
       db:
@@ -198,12 +200,8 @@ networks:
   frontend:
   backend:
     # db/redis/api live only on this network; only `web` publishes a host port.
-    # The subnet is pinned so the API can trust X-Forwarded-For from it (and nothing else).
-    # Change BACKEND_SUBNET if it collides with a network on your host, and give each
-    # TaskBoard installation on the same host its own subnet.
-    ipam:
-      config:
-        - subnet: ${BACKEND_SUBNET:-172.30.250.0/24}
+    # Docker assigns the subnet automatically (no fixed range that could collide with
+    # existing networks on the host).
 
 volumes:
   pgdata:

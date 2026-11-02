@@ -10,7 +10,6 @@ cd "$(dirname "$0")/.."
 export COMPOSE_PROJECT_NAME=taskboard-deploycheck
 export APP_PORT="${CHECK_APP_PORT:-18090}"
 export APP_BIND_ADDRESS=127.0.0.1
-export BACKEND_SUBNET=172.30.252.0/24   # distinct from the main stack so both can run
 BASE="http://127.0.0.1:${APP_PORT}"
 export PUBLIC_BASE_URL="$BASE"
 export POSTGRES_PASSWORD="dc-$(openssl rand -hex 16 2>/dev/null || date +%s%N)"
@@ -77,8 +76,10 @@ check "WebSocket auth + subscribe via nginx" grep -q WS_OK <<<"$WS"
 echo "== 4b. Hardening"
 check "no .env file tracked by git (only .env.example)" sh -c "! git ls-files | grep -E '(^|/)\.env' | grep -vx '.env.example'"
 TRUSTED=$("${COMPOSE[@]}" exec -T api printenv FORWARDED_ALLOW_IPS | tr -d '\r')
-NETSUB=$(docker network inspect "${COMPOSE_PROJECT_NAME}_backend" --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}')
-check "API trusts X-Forwarded-For only from the pinned backend subnet ($TRUSTED)" test "$TRUSTED" = "$NETSUB" -a "$TRUSTED" = "$BACKEND_SUBNET"
+WEBIP=$(docker inspect "$("${COMPOSE[@]}" ps -q web)" --format "{{(index .NetworkSettings.Networks \"${COMPOSE_PROJECT_NAME}_backend\").IPAddress}}")
+INRANGE=$("${COMPOSE[@]}" exec -T api python -c "import ipaddress,sys; ip=ipaddress.ip_address('$WEBIP'); print(any(ip in ipaddress.ip_network(n.strip()) for n in '$TRUSTED'.split(',')))")
+check "nginx ($WEBIP) is within the API's trusted forwarders ($TRUSTED)" test "$INRANGE" = "True"
+check "loopback is not a trusted forwarder" sh -c "! echo '$TRUSTED' | grep -qE '127\.|\*'"
 check "no HSTS header by default (plain HTTP)" sh -c "! curl -fsSI '$BASE/' | grep -qi strict-transport-security"
 # Forged X-Forwarded-For from an untrusted peer (127.0.0.1 inside the api container) must not
 # give each attempt a fresh client IP: the 6th wrong password is locked out (429).

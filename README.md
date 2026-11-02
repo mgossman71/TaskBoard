@@ -125,7 +125,7 @@ Every variable is listed (with comments) in [`.env.example`](.env.example).
 | `PASSWORD_RESET_EXPIRE_MINUTES` / `INVITATION_EXPIRE_DAYS` | `60` / `7` | Token lifetimes |
 | `COOKIE_SECURE` | *(empty = automatic)* | Secure cookies; automatic = `true` when `PUBLIC_BASE_URL` is `https://` |
 | `HSTS_ENABLED` | `false` | Send `Strict-Transport-Security` (only when served over HTTPS) |
-| `BACKEND_SUBNET` | `172.30.250.0/24` | Pinned subnet of the internal network; the API trusts `X-Forwarded-For` only from it. Change on collision; use a distinct subnet per installation on one host |
+| `API_TRUSTED_FORWARDERS` | *(empty = Docker private ranges)* | CIDRs the API accepts `X-Forwarded-For` from (nginx on the internal network); loopback and public addresses are never trusted by default |
 | `LOGIN_MAX_FAILURES` / `LOGIN_FAILURE_WINDOW_SECONDS` / `LOGIN_LOCKOUT_SECONDS` | `5` / `900` / `900` | Brute-force lockout |
 | `IP_AUTH_RATE_PER_MINUTE` / `REGISTER_RATE_PER_MINUTE` / `PASSWORD_RESET_RATE_PER_MINUTE` | `30` / `10` / `5` | Per-IP API rate limits |
 | `NGINX_API_RATE` / `NGINX_AUTH_RATE` | `50r/s` / `10r/s` | nginx per-IP request rates |
@@ -155,7 +155,7 @@ VUS=50 DURATION=1m ./scripts/load-test.sh
 ```
 
 Last full run: backend 141 passed · frontend 29 passed · end-to-end 7 passed · deployment
-check 31 passed · load test thresholds met. Details in [TEST_RESULTS.md](TEST_RESULTS.md).
+check 32 passed · load test thresholds met. Details in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## Development notes
 
@@ -174,7 +174,7 @@ check 31 passed · load test thresholds met. Details in [TEST_RESULTS.md](TEST_R
 | `service "migrate" didn't complete successfully` | `docker compose logs migrate` — usually placeholder secrets or DB credentials changed after first init |
 | `password authentication failed` / changed `POSTGRES_PASSWORD` after first start (e.g. re-ran `cp .env.example .env`) | PostgreSQL keeps the original password in the volume; run `./scripts/sync-db-password.sh` (sets the DB password to the one in `.env`, keeps data) |
 | Can't log in through an HTTPS proxy | Set `PUBLIC_BASE_URL=https://…` (cookies then become Secure automatically) |
-| `Pool overlaps with other one on this address space` / `invalid pool request` | `BACKEND_SUBNET` collides with an existing Docker or host network; pick another private /24 in `.env` |
+| `Pool overlaps with other one on this address space` | An older checkout pinned a fixed subnet; `git pull` (subnets are now assigned automatically), then `docker compose up -d --build` |
 | `network taskboard_backend … needs to be recreated` after upgrading | `docker compose down` (keeps data) then `docker compose up -d --build` |
 | WebSocket status shows "Reconnecting…" behind a proxy | Ensure the proxy forwards `Upgrade`/`Connection` headers for `/api/v1/ws` and the origin matches `PUBLIC_BASE_URL` |
 

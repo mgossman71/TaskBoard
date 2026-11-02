@@ -15,7 +15,7 @@ compose projects with throwaway volumes.
 | Backend (pytest, real PostgreSQL 18 + Redis + live uvicorn) | `./scripts/test-backend.sh` | **141 passed, 0 failed** (15.8 s; re-run after the review fixes) |
 | Frontend (tsc typecheck + Vitest) | `./scripts/test-frontend.sh` | **29 passed, 0 failed** (6 files) |
 | End-to-end (Playwright/Chromium, full stack + Mailpit) | `./scripts/test-e2e.sh` | **7 passed, 0 failed** (11.4 s) |
-| Deployment check (build → health → hardening → persistence) | `./scripts/deploy-check.sh` | **31 passed, 0 failed** |
+| Deployment check (build → health → hardening → persistence) | `./scripts/deploy-check.sh` | **32 passed, 0 failed** (also verified with `172.30.0.0/16` pre-occupied by another network) |
 | Load test (k6) | `./scripts/load-test.sh` | thresholds passed; details below |
 
 No tests are skipped or marked xfail.
@@ -70,10 +70,9 @@ back on 409, realtime events applied to cache), `validation.test.ts`, `component
 7. UI smoke: dashboard charts, list filtering, task dialog, dark theme, mobile layout and
    navigation drawer, theme persistence — **zero console/page errors**.
 
-## Deployment check (`scripts/deploy-check.sh`, 31/31)
+## Deployment check (`scripts/deploy-check.sh`, 32/32)
 
-Added after the code review: no `.env` tracked by git; the API's `FORWARDED_ALLOW_IPS` equals the
-pinned backend subnet; no HSTS over plain HTTP; **six logins with forged, rotating
+Added after the code review: no `.env` tracked by git; nginx's address lies within the API's trusted forwarders and loopback is not trusted; no HSTS over plain HTTP; **six logins with forged, rotating
 `X-Forwarded-For` (sent directly to the API from an untrusted peer, and again through nginx)
 are locked out on the 6th attempt**. Negative control: with the old `FORWARDED_ALLOW_IPS="*"`
 the direct variant returned 401 six times (no lockout), so the check detects the regression;
