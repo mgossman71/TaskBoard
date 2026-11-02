@@ -21,12 +21,14 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-install-project
 COPY forgeboard ./forgeboard
+# --reinstall-package: never reuse a cached wheel of the app itself (its version
+# number does not change between builds, so the uv cache would serve stale code).
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev --no-editable
+    uv sync --locked --no-dev --no-editable --reinstall-package forgeboard
 
 FROM builder AS test
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-editable
+    uv sync --locked --no-editable --reinstall-package forgeboard
 ENV PATH="/opt/venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 COPY alembic.ini ./
 COPY alembic ./alembic

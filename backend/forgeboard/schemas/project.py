@@ -6,6 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field, StringConstraints
 
+from forgeboard.models.org import Role
 from forgeboard.models.project import ProjectStatus
 from forgeboard.schemas.auth import UserBrief
 from forgeboard.schemas.common import CleanStr, CleanText, ORMModel
@@ -107,6 +108,7 @@ class BoardOut(BaseModel):
     tasks: list[TaskOut]
     last_event_id: int
     can_edit: bool
+    role: Role
 
 
 from forgeboard.schemas.task import TaskOut  # noqa: E402

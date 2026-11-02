@@ -1,0 +1,42 @@
+# Overlay for end-to-end tests: isolated project (-p forgeboard-e2e), real SMTP
+# delivery to Mailpit, relaxed rate limits (all browsers share one IP) and a
+# Playwright runner on the same network.
+services:
+  api:
+    environment:
+      PUBLIC_BASE_URL: http://web:8080
+      EMAIL_BACKEND: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_STARTTLS: "false"
+      IP_AUTH_RATE_PER_MINUTE: "10000"
+      REGISTER_RATE_PER_MINUTE: "10000"
+      PASSWORD_RESET_RATE_PER_MINUTE: "10000"
+  web:
+    environment:
+      NGINX_AUTH_RATE: 200r/s
+      NGINX_API_RATE: 500r/s
+
+  mailpit:
+    image: axllent/mailpit:v1.27.10
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8025/livez"]
+      interval: 3s
+      retries: 20
+
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.56.1-noble
+    working_dir: /e2e
+    volumes:
+      - ./tests/e2e:/e2e
+    environment:
+      BASE_URL: http://web:8080
+      MAILPIT_URL: http://mailpit:8025
+      CI: "1"
+    depends_on:
+      web: { condition: service_healthy }
+      mailpit: { condition: service_healthy }
+    networks: [frontend, backend]
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npx playwright test"]
+    profiles: ["e2e"]

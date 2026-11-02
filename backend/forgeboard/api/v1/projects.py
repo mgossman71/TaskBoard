@@ -100,6 +100,7 @@ async def board(project_id: uuid.UUID, auth: Auth, session: Session) -> BoardOut
         tasks=await tasks_out(session, tasks),
         last_event_id=last_id,
         can_edit=access.can_write,
+        role=access.role,
     )
 
 
